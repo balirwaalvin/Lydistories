@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadMessages();
     await loadWritersRoomBooks();
     setupNavigation();
+    setupFormListeners();
 });
 
 // Setup navigation
@@ -175,8 +176,16 @@ function editBook(bookId) {
     document.getElementById('bookModal').style.display = 'block';
 }
 
+// Setup form listeners
+function setupFormListeners() {
+    const bookForm = document.getElementById('bookForm');
+    if (bookForm) {
+        bookForm.addEventListener('submit', handleBookFormSubmit);
+    }
+}
+
 // Handle book form submission
-document.getElementById('bookForm').addEventListener('submit', function(e) {
+function handleBookFormSubmit(e) {
     e.preventDefault();
     
     const bookId = document.getElementById('bookId').value;
@@ -218,9 +227,11 @@ document.getElementById('bookForm').addEventListener('submit', function(e) {
         localStorage.setItem('lydistoriesBookContent', JSON.stringify(bookContent));
     }
     
-    // Update global booksData (only published books)
-    booksData.length = 0;
-    booksData.push(...books.filter(b => b.published !== false));
+    // Update global booksData if it exists (only published books)
+    if (window.booksData) {
+        window.booksData.length = 0;
+        window.booksData.push(...books.filter(b => b.published !== false));
+    }
     
     // Reload table
     loadBooksTable();
@@ -230,7 +241,7 @@ document.getElementById('bookForm').addEventListener('submit', function(e) {
     // Don't close modal, show success message
     const status = bookData.published ? 'published' : 'saved as draft';
     showAlert(bookId ? `Book updated and ${status}! You can now edit chapters.` : `Book ${status}! You can now edit chapters.`, 'success');
-});
+}
 
 // Show delete modal
 function showDeleteModal(bookId) {
@@ -496,32 +507,47 @@ function insertFormatting(type) {
 }
 
 // Load orders table
-function loadOrdersTable() {
-    const purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+// Load orders table
+async function loadOrdersTable() {
     const tbody = document.getElementById('ordersTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state">Loading orders...</td></tr>';
+    
+    // Try to load from Firebase first
+    const result = await firebaseService.getUserPurchases('guest');
+    const purchases = result.success ? result.purchases : JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
     
     if (purchases.length === 0) {
         tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No orders yet</td></tr>';
         return;
     }
     
-    tbody.innerHTML = purchases.reverse().map(order => `
+    tbody.innerHTML = purchases.reverse().map(order => {
+        const orderDate = order.purchasedAt ? order.purchasedAt.toDate() : new Date(order.timestamp);
+        return `
         <tr>
-            <td>${new Date(order.timestamp).toLocaleDateString('en-GB')}</td>
+            <td>${orderDate.toLocaleDateString('en-GB')}</td>
             <td>${order.bookTitle}</td>
-            <td>${order.customerName}</td>
-            <td>${order.phoneNumber}</td>
+            <td>${order.customerName || 'N/A'}</td>
+            <td>${order.phoneNumber || 'N/A'}</td>
             <td><strong>${parseInt(order.amount).toLocaleString()}</strong></td>
-            <td><span class="book-category">${order.provider.toUpperCase()}</span></td>
+            <td><span class="book-category">${(order.provider || order.paymentMethod || 'N/A').toUpperCase()}</span></td>
             <td><span class="status-badge status-completed">Completed</span></td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 // Load messages
-function loadMessages() {
-    const messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
+async function loadMessages() {
     const container = document.getElementById('messagesContainer');
+    if (!container) return;
+    
+    container.innerHTML = '<p style="text-align: center; padding: 40px;">Loading messages...</p>';
+    
+    // Try to load from Firebase first
+    const result = await firebaseService.getAllMessages();
+    const messages = result.success ? result.messages : JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
     
     if (messages.length === 0) {
         container.innerHTML = `
@@ -534,7 +560,9 @@ function loadMessages() {
         return;
     }
     
-    container.innerHTML = messages.reverse().map(msg => `
+    container.innerHTML = messages.reverse().map(msg => {
+        const msgDate = msg.createdAt ? msg.createdAt.toDate() : new Date(msg.timestamp);
+        return `
         <div class="message-card">
             <div class="message-header">
                 <div class="message-info">
@@ -545,7 +573,7 @@ function loadMessages() {
                     </div>
                 </div>
                 <div class="message-date">
-                    ${new Date(msg.timestamp).toLocaleDateString('en-GB', {
+                    ${msgDate.toLocaleDateString('en-GB', {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric'
@@ -559,7 +587,7 @@ function loadMessages() {
                 ${msg.message}
             </div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 // Logout
@@ -675,6 +703,7 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Make functions globally accessible for onclick handlers
+window.logout = logout;
 window.editBook = editBook;
 window.showDeleteModal = showDeleteModal;
 window.confirmDelete = confirmDelete;
