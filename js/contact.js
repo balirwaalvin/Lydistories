@@ -47,6 +47,7 @@ async function handleContactSubmission() {
         email: email,
         phone: phone,
         subject: subject,
+        message: message
     };
 
     // Save to Firebase
@@ -86,10 +87,6 @@ function storeContactMessage(contactData) {
         ...contactData,
         timestamp: new Date().toISOString()
     });
-    localStorage.setItem('lydistoriesMessages', JSON.stringify(messages));
-}
-    let messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
-    messages.push(contactData);
     localStorage.setItem('lydistoriesMessages', JSON.stringify(messages));
 }
 
