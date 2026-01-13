@@ -28,42 +28,45 @@ function togglePassword() {
 window.togglePassword = togglePassword;
 
 // Handle login form submission
-document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
+document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('adminLoginForm');
     
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
-    const loginError = document.getElementById('loginError');
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-    
-    // Validate credentials locally first
-    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-        // Try Firebase authentication (optional - for future use)
-        // For now, use session storage
-        
-        // Set admin session
-        sessionStorage.setItem('lydistoriesAdmin', 'true');
-        sessionStorage.setItem('adminUsername', username);
-        
-        // Redirect to dashboard
-        window.location.href = 'admin-dashboard.html';
-    } else {
-        // Show error
-        loginError.textContent = 'Invalid username or password';
-        loginError.classList.add('show');
-        
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-        
-        // Clear after 3 seconds
-        setTimeout(() => {
-            loginError.classList.remove('show');
-        }, 3000);
+    if (loginForm) {
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const loginError = document.getElementById('loginError');
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+            
+            // Validate credentials locally first
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                // Set admin session
+                sessionStorage.setItem('lydistoriesAdmin', 'true');
+                sessionStorage.setItem('adminUsername', username);
+                
+                // Redirect to dashboard
+                window.location.href = 'admin-dashboard.html';
+            } else {
+                // Show error
+                loginError.textContent = 'Invalid username or password';
+                loginError.classList.add('show');
+                
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+                
+                // Clear after 3 seconds
+                setTimeout(() => {
+                    loginError.classList.remove('show');
+                }, 3000);
+            }
+        });
     }
 });
