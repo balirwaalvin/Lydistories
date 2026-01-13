@@ -1,11 +1,45 @@
+// Import Firebase service
+import firebaseService from './firebase-service.js';
+
 // Load all books on order page
-document.addEventListener('DOMContentLoaded', function() {
-    loadAllBooks();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadAllBooksFromFirebase();
     setupSearch();
     setupCategoryFilter();
     setupPaymentOptions();
     setupPaymentForm();
 });
+
+// Load books from Firebase
+async function loadAllBooksFromFirebase() {
+    const booksGrid = document.getElementById('booksGrid');
+    if (!booksGrid) return;
+
+    booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">Loading books...</p>';
+    
+    const result = await firebaseService.getAllBooks();
+    
+    if (result.success && result.books.length > 0) {
+        // Use Firebase books
+        window.booksData = result.books;
+        booksGrid.innerHTML = '';
+        result.books.forEach(book => {
+            const bookCard = createBookCard(book);
+            booksGrid.appendChild(bookCard);
+        });
+    } else {
+        // Fallback to local data if Firebase fails or is empty
+        if (!window.booksData || window.booksData.length === 0) {
+            booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">No books available</p>';
+        } else {
+            booksGrid.innerHTML = '';
+            window.booksData.forEach(book => {
+                const bookCard = createBookCard(book);
+                booksGrid.appendChild(bookCard);
+            });
+        }
+    }
+}
 
 // Load all books
 function loadAllBooks() {
@@ -190,8 +224,25 @@ function validatePhoneNumber(phone) {
     return ugandaPattern.test(phone);
 }
 
-// Store purchase in localStorage
-function storePurchase(paymentData) {
+// Store purchase in Firebase and localStorage
+async function storePurchase(paymentData) {
+    // Store in Firebase
+    const user = firebaseService.getCurrentUser();
+    const userId = user ? user.uid : 'guest';
+    
+    const result = await firebaseService.recordPurchase(
+        userId,
+        paymentData.bookId,
+        paymentData.bookTitle,
+        paymentData.amount,
+        paymentData.provider
+    );
+    
+    if (result.success) {
+        console.log('Purchase recorded in Firebase');
+    }
+    
+    // Also store in localStorage for offline access
     let purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
     purchases.push(paymentData);
     localStorage.setItem('lydistoriesPurchases', JSON.stringify(purchases));

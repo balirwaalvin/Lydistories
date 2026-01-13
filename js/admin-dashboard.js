@@ -1,3 +1,6 @@
+// Import Firebase service
+import firebaseService from './firebase-service.js';
+
 // Check if admin is logged in
 if (!sessionStorage.getItem('lydistoriesAdmin')) {
     window.location.href = 'admin-login.html';
@@ -9,12 +12,12 @@ let currentChapters = [];
 let currentChapterIndex = null;
 
 // Initialize dashboard
-document.addEventListener('DOMContentLoaded', function() {
-    loadDashboardStats();
-    loadBooksTable();
-    loadOrdersTable();
-    loadMessages();
-    loadWritersRoomBooks();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadDashboardStats();
+    await loadBooksTable();
+    await loadOrdersTable();
+    await loadMessages();
+    await loadWritersRoomBooks();
     setupNavigation();
 });
 
@@ -43,10 +46,16 @@ function setupNavigation() {
 }
 
 // Load dashboard statistics
-function loadDashboardStats() {
-    const books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
-    const purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
-    const messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
+async function loadDashboardStats() {
+    // Load from Firebase
+    const booksResult = await firebaseService.getAllBooks();
+    const books = booksResult.success ? booksResult.books : JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
+    
+    const purchasesResult = await firebaseService.getUserPurchases('guest'); // Get all purchases
+    const purchases = purchasesResult.success ? purchasesResult.purchases : JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+    
+    const messagesResult = await firebaseService.getAllMessages();
+    const messages = messagesResult.success ? messagesResult.messages : JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
     
     document.getElementById('totalBooks').textContent = books.length;
     document.getElementById('totalOrders').textContent = purchases.length;
@@ -95,9 +104,12 @@ function loadRecentOrders(purchases) {
 }
 
 // Load books table
-function loadBooksTable() {
-    const books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
+async function loadBooksTable() {
     const tbody = document.getElementById('booksTableBody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Loading books...</td></tr>';
+    
+    const result = await firebaseService.getAllBooks();
+    const books = result.success ? result.books : JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
     
     if (books.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No books available</td></tr>';
@@ -115,10 +127,10 @@ function loadBooksTable() {
             <td><span class="book-category">${book.category}</span></td>
             <td><strong>${parseInt(book.price).toLocaleString()}</strong></td>
             <td>
-                <button onclick="editBook(${book.id})" class="action-btn btn-edit">
+                <button onclick="editBook('${book.id}')" class="action-btn btn-edit">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button onclick="showDeleteModal(${book.id})" class="action-btn btn-delete">
+                <button onclick="showDeleteModal('${book.id}')" class="action-btn btn-delete">
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </td>

@@ -1,11 +1,29 @@
+// Import Firebase service
+import firebaseService from './firebase-service.js';
+
 // Load user's library
-document.addEventListener('DOMContentLoaded', function() {
-    loadLibrary();
+document.addEventListener('DOMContentLoaded', async function() {
+    await loadLibrary();
 });
 
-function loadLibrary() {
+async function loadLibrary() {
     const libraryContent = document.getElementById('libraryContent');
-    const purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+    libraryContent.innerHTML = '<p style="text-align: center; padding: 40px;">Loading your library...</p>';
+    
+    // Try to load from Firebase first
+    const user = firebaseService.getCurrentUser();
+    const userId = user ? user.uid : 'guest';
+    
+    const result = await firebaseService.getUserPurchases(userId);
+    let purchases = [];
+    
+    if (result.success && result.purchases.length > 0) {
+        // Use Firebase purchases
+        purchases = result.purchases;
+    } else {
+        // Fallback to localStorage
+        purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+    }
 
     if (purchases.length === 0) {
         libraryContent.innerHTML = `
@@ -19,6 +37,10 @@ function loadLibrary() {
         return;
     }
 
+    // Load books from Firebase
+    const booksResult = await firebaseService.getAllBooks();
+    const booksData = booksResult.success ? booksResult.books : window.booksData || [];
+
     // Get unique books (in case of duplicate purchases)
     const uniqueBooks = [];
     const bookIds = new Set();
@@ -31,7 +53,11 @@ function loadLibrary() {
     });
 
     // Sort by purchase date (most recent first)
-    uniqueBooks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    uniqueBooks.sort((a, b) => {
+        const dateA = a.purchasedAt ? a.purchasedAt.toDate() : new Date(a.timestamp);
+        const dateB = b.purchasedAt ? b.purchasedAt.toDate() : new Date(b.timestamp);
+        return dateB - dateA;
+    });
 
     libraryContent.innerHTML = '<div class="library-books" id="libraryBooks"></div>';
     const libraryBooks = document.getElementById('libraryBooks');

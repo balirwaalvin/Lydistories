@@ -1,7 +1,11 @@
+// Import Firebase service
+import firebaseService from './firebase-service.js';
+
 // Default admin credentials (in production, this should be in a secure database)
 const ADMIN_CREDENTIALS = {
     username: 'admin',
-    password: 'admin123'
+    password: 'admin123',
+    email: 'admin@lydistories.com'
 };
 
 // Toggle password visibility
@@ -20,16 +24,28 @@ function togglePassword() {
     }
 }
 
+// Make togglePassword globally accessible
+window.togglePassword = togglePassword;
+
 // Handle login form submission
-document.getElementById('adminLoginForm').addEventListener('submit', function(e) {
+document.getElementById('adminLoginForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
     const loginError = document.getElementById('loginError');
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn.innerHTML;
     
-    // Validate credentials
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
+    
+    // Validate credentials locally first
     if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        // Try Firebase authentication (optional - for future use)
+        // For now, use session storage
+        
         // Set admin session
         sessionStorage.setItem('lydistoriesAdmin', 'true');
         sessionStorage.setItem('adminUsername', username);
@@ -40,6 +56,10 @@ document.getElementById('adminLoginForm').addEventListener('submit', function(e)
         // Show error
         loginError.textContent = 'Invalid username or password';
         loginError.classList.add('show');
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
         
         // Clear after 3 seconds
         setTimeout(() => {

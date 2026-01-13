@@ -1,3 +1,6 @@
+// Import Firebase service
+import firebaseService from './firebase-service.js';
+
 // Contact form handling
 document.addEventListener('DOMContentLoaded', function() {
     setupContactForm();
@@ -13,13 +16,14 @@ function setupContactForm() {
     });
 }
 
-function handleContactSubmission() {
+async function handleContactSubmission() {
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const phone = document.getElementById('phone').value;
     const subject = document.getElementById('subject').value;
     const message = document.getElementById('message').value;
     const formMessage = document.getElementById('formMessage');
+    const contactForm = document.getElementById('contactForm');
 
     // Get submit button
     const submitBtn = contactForm.querySelector('button[type="submit"]');
@@ -43,16 +47,12 @@ function handleContactSubmission() {
         email: email,
         phone: phone,
         subject: subject,
-        message: message,
-        timestamp: new Date().toISOString()
     };
 
-    // In production, this would send to your backend API
-    // For now, we'll simulate the submission
-    setTimeout(() => {
-        // Store message in localStorage (in production, send to server)
-        storeContactMessage(contactData);
-
+    // Save to Firebase
+    const result = await firebaseService.saveContactMessage(contactData);
+    
+    if (result.success) {
         // Show success message
         showFormMessage('Thank you for your message! We will get back to you soon.', 'success');
 
@@ -62,10 +62,17 @@ function handleContactSubmission() {
         // Reset button
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
-
-        // Also send email notification (in production)
-        // sendEmailNotification(contactData);
-    }, 1500);
+        
+        // Also store in localStorage as backup
+        storeContactMessage(contactData);
+    } else {
+        // Show error message
+        showFormMessage('Failed to send message. Please try again.', 'error');
+        
+        // Reset button
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+    }
 }
 
 function validateEmail(email) {
@@ -74,6 +81,13 @@ function validateEmail(email) {
 }
 
 function storeContactMessage(contactData) {
+    let messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
+    messages.push({
+        ...contactData,
+        timestamp: new Date().toISOString()
+    });
+    localStorage.setItem('lydistoriesMessages', JSON.stringify(messages));
+}
     let messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
     messages.push(contactData);
     localStorage.setItem('lydistoriesMessages', JSON.stringify(messages));
