@@ -345,12 +345,6 @@ function closeChapterModal() {
     currentChapterIndex = null;
 }
 
-// Chapter Editor Functions
-function closeChapterModal() {
-    document.getElementById('chapterModal').style.display = 'none';
-    currentChapterIndex = null;
-}
-
 // Convert HTML to plain text for editing
 function htmlToPlainText(html) {
     if (!html) return '';
