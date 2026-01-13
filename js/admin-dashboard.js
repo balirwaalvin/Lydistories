@@ -1,8 +1,11 @@
 // Import Firebase service
 import firebaseService from './firebase-service.js';
 
+console.log('Admin dashboard script loaded');
+
 // Check if admin is logged in
 if (!sessionStorage.getItem('lydistoriesAdmin')) {
+    console.log('Not authenticated, redirecting to login');
     window.location.href = 'admin-login.html';
 }
 
@@ -13,21 +16,38 @@ let currentChapterIndex = null;
 
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', async function() {
-    await loadDashboardStats();
-    await loadBooksTable();
-    await loadOrdersTable();
-    await loadMessages();
-    await loadWritersRoomBooks();
-    setupNavigation();
-    setupFormListeners();
+    console.log('DOMContentLoaded fired - starting initialization');
+    try {
+        console.log('Loading dashboard stats...');
+        await loadDashboardStats();
+        console.log('Loading books table...');
+        await loadBooksTable();
+        console.log('Loading orders table...');
+        await loadOrdersTable();
+        console.log('Loading messages...');
+        await loadMessages();
+        console.log('Loading writers room...');
+        await loadWritersRoomBooks();
+        console.log('Setting up navigation...');
+        setupNavigation();
+        console.log('Setting up form listeners...');
+        setupFormListeners();
+        console.log('Dashboard initialized successfully');
+    } catch (error) {
+        console.error('Error initializing dashboard:', error);
+        alert('Error loading dashboard. Check console for details.');
+    }
 });
 
 // Setup navigation
 function setupNavigation() {
     const menuItems = document.querySelectorAll('.admin-menu li');
+    console.log('Found menu items:', menuItems.length);
     
     menuItems.forEach(item => {
         item.addEventListener('click', function() {
+            console.log('Menu item clicked:', this.dataset.section);
+            
             // Remove active class from all items
             menuItems.forEach(mi => mi.classList.remove('active'));
             
@@ -41,9 +61,14 @@ function setupNavigation() {
             
             // Show selected section
             const sectionName = this.dataset.section;
-            document.getElementById(`${sectionName}-section`).classList.add('active');
+            const targetSection = document.getElementById(`${sectionName}-section`);
+            console.log('Showing section:', sectionName, 'Element found:', !!targetSection);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
         });
     });
+    console.log('Navigation setup complete');
 }
 
 // Load dashboard statistics
