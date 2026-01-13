@@ -172,8 +172,138 @@ function showAddBookModal() {
     document.getElementById('bookPublished').checked = true;
     currentEditingBookId = null;
     currentChapters = [];
+    
+    // Reset cover upload UI
+    resetCoverUploadUI();
+    switchCoverTab('url');
+    
     document.getElementById('bookModal').style.display = 'block';
 }
+
+// Switch between URL and Upload tabs
+function switchCoverTab(tab) {
+    // Update tab buttons
+    document.querySelectorAll('.upload-tab').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    // Update tab content
+    document.querySelectorAll('.upload-tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    document.getElementById(`${tab}Tab`).classList.add('active');
+    
+    // Clear the other input
+    if (tab === 'url') {
+        resetCoverUploadUI();
+    } else {
+        document.getElementById('bookCover').value = '';
+    }
+}
+
+// Handle cover image selection
+async function handleCoverImageSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Image size should be less than 5MB');
+        return;
+    }
+    
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        document.getElementById('previewImg').src = e.target.result;
+        document.getElementById('imagePreview').style.display = 'block';
+        document.querySelector('.file-upload-label').style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+    
+    // Upload to Firebase Storage
+    await uploadCoverToFirebase(file);
+}
+
+// Upload cover image to Firebase Storage
+async function uploadCoverToFirebase(file) {
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressBarFill');
+    const progressText = document.getElementById('progressText');
+    
+    progressDiv.style.display = 'block';
+    progressText.textContent = 'Uploading...';
+    
+    // Generate unique filename
+    const bookId = document.getElementById('bookId').value || Date.now();
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `book-covers/${bookId}_${Date.now()}.${fileExtension}`;
+    
+    try {
+        // Simulate upload progress (since Firebase doesn't provide progress easily)
+        let progress = 0;
+        const progressInterval = setInterval(() => {
+            progress += 10;
+            if (progress <= 90) {
+                progressFill.style.width = progress + '%';
+            }
+        }, 100);
+        
+        // Upload to Firebase
+        const result = await firebaseService.uploadBookCover(file, bookId);
+        
+        clearInterval(progressInterval);
+        
+        if (result.success) {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Upload complete!';
+            
+            // Store the URL in a hidden field
+            document.getElementById('bookCover').value = result.url;
+            
+            setTimeout(() => {
+                progressDiv.style.display = 'none';
+                progressFill.style.width = '0%';
+            }, 1000);
+        } else {
+            throw new Error(result.error || 'Upload failed');
+        }
+    } catch (error) {
+        console.error('Upload error:', error);
+        progressText.textContent = 'Upload failed. Please try again.';
+        progressText.style.color = '#e74c3c';
+        
+        setTimeout(() => {
+            resetCoverUploadUI();
+        }, 2000);
+    }
+}
+
+// Remove cover image
+function removeCoverImage() {
+    resetCoverUploadUI();
+    document.getElementById('bookCover').value = '';
+}
+
+// Reset cover upload UI
+function resetCoverUploadUI() {
+    document.getElementById('bookCoverFile').value = '';
+    document.getElementById('imagePreview').style.display = 'none';
+    document.getElementById('uploadProgress').style.display = 'none';
+    document.querySelector('.file-upload-label').style.display = 'flex';
+    document.getElementById('progressBarFill').style.width = '0%';
+    document.getElementById('progressText').textContent = 'Uploading...';
+    document.getElementById('progressText').style.color = '#666';
+    document.getElementById('fileLabel').textContent = 'Choose image or drag & drop';
+}
+
 
 // Edit book
 function editBook(bookId) {
@@ -194,6 +324,10 @@ function editBook(bookId) {
     
     currentEditingBookId = bookId;
     
+    // Reset cover upload UI and show URL tab with existing cover
+    resetCoverUploadUI();
+    switchCoverTab('url');
+    
     // Load chapters if they exist
     const bookContent = JSON.parse(localStorage.getItem('lydistoriesBookContent') || '{}');
     currentChapters = bookContent[bookId]?.chapters || [];
@@ -213,6 +347,13 @@ function setupFormListeners() {
 function handleBookFormSubmit(e) {
     e.preventDefault();
     
+    // Validate that we have a cover image
+    const coverUrl = document.getElementById('bookCover').value;
+    if (!coverUrl) {
+        alert('Please provide a cover image (either URL or upload an image)');
+        return;
+    }
+    
     const bookId = document.getElementById('bookId').value;
     const newId = bookId ? parseInt(bookId) : Date.now();
     const bookData = {
@@ -221,7 +362,7 @@ function handleBookFormSubmit(e) {
         author: document.getElementById('bookAuthor').value,
         category: document.getElementById('bookCategory').value,
         price: parseInt(document.getElementById('bookPrice').value),
-        cover: document.getElementById('bookCover').value,
+        cover: coverUrl,
         description: document.getElementById('bookDescription').value,
         published: document.getElementById('bookPublished').checked
     };
@@ -739,3 +880,6 @@ window.insertFormatting = insertFormatting;
 window.loadChapterEditor = loadChapterEditor;
 window.openWritersChapterEditor = openWritersChapterEditor;
 window.loadWritersRoomBooks = loadWritersRoomBooks;
+window.switchCoverTab = switchCoverTab;
+window.handleCoverImageSelect = handleCoverImageSelect;
+window.removeCoverImage = removeCoverImage;

@@ -218,9 +218,44 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="bookCover">Cover Image URL *</label>
-                    <input type="url" id="bookCover" placeholder="https://example.com/image.jpg" required>
-                    <small>Use a direct image URL (e.g., from Unsplash, Imgur, etc.)</small>
+                    <label>Cover Image *</label>
+                    <div class="cover-upload-options">
+                        <div class="upload-option-tabs">
+                            <button type="button" class="upload-tab active" data-tab="url" onclick="switchCoverTab('url')">
+                                <i class="fas fa-link"></i> Image URL
+                            </button>
+                            <button type="button" class="upload-tab" data-tab="upload" onclick="switchCoverTab('upload')">
+                                <i class="fas fa-upload"></i> Upload Image
+                            </button>
+                        </div>
+                        
+                        <div id="urlTab" class="upload-tab-content active">
+                            <input type="url" id="bookCover" placeholder="https://example.com/image.jpg">
+                            <small>Use a direct image URL (e.g., from Unsplash, Imgur, etc.)</small>
+                        </div>
+                        
+                        <div id="uploadTab" class="upload-tab-content">
+                            <div class="file-upload-wrapper">
+                                <input type="file" id="bookCoverFile" accept="image/*" onchange="handleCoverImageSelect(event)">
+                                <label for="bookCoverFile" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span id="fileLabel">Choose image or drag & drop</span>
+                                </label>
+                                <div id="uploadProgress" class="upload-progress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div id="progressBarFill" class="progress-fill"></div>
+                                    </div>
+                                    <span id="progressText">Uploading...</span>
+                                </div>
+                                <div id="imagePreview" class="image-preview" style="display: none;">
+                                    <img id="previewImg" src="" alt="Preview">
+                                    <button type="button" class="btn-remove-image" onclick="removeCoverImage()">
+                                        <i class="fas fa-times"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-group">
