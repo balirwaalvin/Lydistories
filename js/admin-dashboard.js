@@ -344,7 +344,7 @@ function setupFormListeners() {
 }
 
 // Handle book form submission
-function handleBookFormSubmit(e) {
+async function handleBookFormSubmit(e) {
     e.preventDefault();
     
     // Validate that we have a cover image
@@ -367,7 +367,7 @@ function handleBookFormSubmit(e) {
         published: document.getElementById('bookPublished').checked
     };
     
-    let books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
+    let books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
     
     if (bookId) {
         // Update existing book
@@ -375,12 +375,18 @@ function handleBookFormSubmit(e) {
         if (index !== -1) {
             books[index] = bookData;
         }
+        
+        // Update in Firebase
+        await firebaseService.updateBook(bookId, bookData);
     } else {
         // Add new book
         books.push(bookData);
         // Update the hidden field with the new ID so chapters can be edited
         document.getElementById('bookId').value = newId;
         currentEditingBookId = newId;
+        
+        // Add to Firebase
+        await firebaseService.addBook(bookData);
     }
     
     // Save to localStorage
@@ -399,10 +405,10 @@ function handleBookFormSubmit(e) {
         window.booksData.push(...books.filter(b => b.published !== false));
     }
     
-    // Reload table
-    loadBooksTable();
-    loadDashboardStats();
-    loadWritersRoomBooks();
+    // Reload tables
+    await loadBooksTable();
+    await loadDashboardStats();
+    await loadWritersRoomBooks();
     
     // Don't close modal, show success message
     const status = bookData.published ? 'published' : 'saved as draft';
@@ -416,23 +422,28 @@ function showDeleteModal(bookId) {
 }
 
 // Confirm delete
-function confirmDelete() {
+async function confirmDelete() {
     if (!currentBookIdToDelete) return;
     
-    let books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
+    let books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
     books = books.filter(b => b.id !== currentBookIdToDelete);
+    
+    // Delete from Firebase
+    await firebaseService.deleteBook(currentBookIdToDelete);
     
     // Save to localStorage
     localStorage.setItem('lydistoriesBooks', JSON.stringify(books));
     
     // Update global booksData
-    booksData.length = 0;
-    booksData.push(...books);
+    if (window.booksData) {
+        window.booksData.length = 0;
+        window.booksData.push(...books);
+    }
     
-    // Reload table
-    loadBooksTable();
-    loadDashboardStats();
-    loadWritersRoomBooks();
+    // Reload tables
+    await loadBooksTable();
+    await loadDashboardStats();
+    await loadWritersRoomBooks();
     
     // Close modal
     closeDeleteModal();
