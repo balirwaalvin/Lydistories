@@ -137,12 +137,18 @@ async function loadBooksTable() {
     const result = await firebaseService.getAllBooks();
     const books = result.success ? result.books : JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
     
+    // Store books globally for edit/delete functions
+    window.currentBooksList = books;
+    
     if (books.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No books available</td></tr>';
         return;
     }
     
-    tbody.innerHTML = books.map(book => `
+    tbody.innerHTML = books.map(book => {
+        // Ensure book.id is a string for consistency
+        const bookIdStr = String(book.id);
+        return `
         <tr>
             <td><img src="${book.cover}" alt="${book.title}" class="book-cover-thumb"></td>
             <td>
@@ -153,15 +159,15 @@ async function loadBooksTable() {
             <td><span class="book-category">${book.category}</span></td>
             <td><strong>${parseInt(book.price).toLocaleString()}</strong></td>
             <td>
-                <button onclick="editBook('${book.id}')" class="action-btn btn-edit">
+                <button onclick="editBook('${bookIdStr}')" class="action-btn btn-edit">
                     <i class="fas fa-edit"></i> Edit
                 </button>
-                <button onclick="showDeleteModal('${book.id}')" class="action-btn btn-delete">
+                <button onclick="showDeleteModal('${bookIdStr}')" class="action-btn btn-delete">
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 // Show add book modal
@@ -307,10 +313,23 @@ function resetCoverUploadUI() {
 
 // Edit book
 function editBook(bookId) {
-    const books = JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
-    const book = books.find(b => b.id === bookId);
+    console.log('Editing book with ID:', bookId);
     
-    if (!book) return;
+    // Get books from global variable set by loadBooksTable
+    const books = window.currentBooksList || JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
+    
+    // Convert bookId to string for comparison since Firebase IDs are strings
+    const bookIdStr = String(bookId);
+    const book = books.find(b => String(b.id) === bookIdStr);
+    
+    if (!book) {
+        console.error('Book not found with ID:', bookId);
+        console.log('Available books:', books);
+        alert('Book not found. Please refresh the page and try again.');
+        return;
+    }
+    
+    console.log('Found book:', book);
     
     document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> Edit Book';
     document.getElementById('bookId').value = book.id;
@@ -417,7 +436,19 @@ async function handleBookFormSubmit(e) {
 
 // Show delete modal
 function showDeleteModal(bookId) {
-    currentBookIdToDelete = bookId;
+    // Get books from global variable set by loadBooksTable
+    const books = window.currentBooksList || JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(booksData));
+    
+    // Convert bookId to string for comparison
+    const bookIdStr = String(bookId);
+    const book = books.find(b => String(b.id) === bookIdStr);
+    
+    if (!book) {
+        alert('Book not found. Please refresh the page and try again.');
+        return;
+    }
+    
+    currentBookIdToDelete = book.id;
     document.getElementById('deleteModal').style.display = 'block';
 }
 
