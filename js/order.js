@@ -3,7 +3,12 @@ import firebaseService from './firebase-service.js';
 
 // Load all books on order page
 document.addEventListener('DOMContentLoaded', async function() {
-    await loadAllBooksFromFirebase();
+    // Load books immediately from local storage/code
+    loadAllBooksInstantly();
+    
+    // Then sync with Firebase in background (optional)
+    syncWithFirebaseInBackground();
+    
     setupSearch();
     setupCategoryFilter();
     setupPaymentOptions();
@@ -11,35 +16,157 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupCardInputFormatting();
 });
 
-// Load books from Firebase
-async function loadAllBooksFromFirebase() {
+// Load books instantly from localStorage or default data
+function loadAllBooksInstantly() {
     const booksGrid = document.getElementById('booksGrid');
     if (!booksGrid) return;
 
-    booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">Loading books...</p>';
-    
-    const result = await firebaseService.getAllBooks();
-    
-    if (result.success && result.books.length > 0) {
-        // Use Firebase books
-        window.booksData = result.books;
+    // Load from localStorage first (faster than Firebase)
+    const storedBooks = localStorage.getItem('lydistoriesBooks');
+    if (storedBooks) {
+        try {
+            const allBooks = JSON.parse(storedBooks);
+            window.booksData = allBooks.filter(b => b.published !== false);
+        } catch (e) {
+            console.error('Error parsing stored books:', e);
+            window.booksData = getDefaultBooks();
+        }
+    } else {
+        // Use default books if nothing in localStorage
+        window.booksData = getDefaultBooks();
+        // Save to localStorage for future use
+        localStorage.setItem('lydistoriesBooks', JSON.stringify(window.booksData));
+    }
+
+    // Display books immediately
+    if (window.booksData && window.booksData.length > 0) {
         booksGrid.innerHTML = '';
-        result.books.forEach(book => {
+        window.booksData.forEach(book => {
             const bookCard = createBookCard(book);
             booksGrid.appendChild(bookCard);
         });
     } else {
-        // Fallback to local data if Firebase fails or is empty
-        if (!window.booksData || window.booksData.length === 0) {
-            booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">No books available</p>';
-        } else {
-            booksGrid.innerHTML = '';
-            window.booksData.forEach(book => {
-                const bookCard = createBookCard(book);
-                booksGrid.appendChild(bookCard);
-            });
-        }
+        booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">No books available</p>';
     }
+}
+
+// Sync with Firebase in background (non-blocking)
+async function syncWithFirebaseInBackground() {
+    try {
+        const result = await firebaseService.getAllBooks();
+        
+        if (result.success && result.books.length > 0) {
+            // Update localStorage with Firebase data
+            localStorage.setItem('lydistoriesBooks', JSON.stringify(result.books));
+            
+            // Check if there are new books not currently displayed
+            const currentIds = window.booksData.map(b => b.id);
+            const newBooks = result.books.filter(b => !currentIds.includes(b.id) && b.published !== false);
+            
+            if (newBooks.length > 0) {
+                // Add new books to display
+                window.booksData = result.books.filter(b => b.published !== false);
+                const booksGrid = document.getElementById('booksGrid');
+                if (booksGrid && booksGrid.children.length > 0) {
+                    // Refresh display to show new books
+                    booksGrid.innerHTML = '';
+                    window.booksData.forEach(book => {
+                        const bookCard = createBookCard(book);
+                        booksGrid.appendChild(bookCard);
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.log('Firebase sync running in background:', error);
+        // Don't show errors to user since books are already loaded
+    }
+}
+
+// Default books data
+function getDefaultBooks() {
+    return [
+        {
+            id: 1,
+            title: "The Journey Home",
+            author: "Sarah Mitchell",
+            category: "fiction",
+            price: 15000,
+            cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
+            description: "A captivating story about finding one's place in the world. Follow Emma as she embarks on a journey of self-discovery across the beautiful landscapes of Uganda.",
+            published: true
+        },
+        {
+            id: 2,
+            title: "Success Mindset",
+            author: "David Okello",
+            category: "self-help",
+            price: 20000,
+            cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=600&fit=crop",
+            description: "Transform your life with proven strategies for personal and professional growth. Learn from Uganda's top entrepreneurs and thought leaders.",
+            published: true
+        },
+        {
+            id: 3,
+            title: "Love in Kampala",
+            author: "Grace Namukasa",
+            category: "romance",
+            price: 18000,
+            cover: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&h=600&fit=crop",
+            description: "A heartwarming romance set in the bustling streets of Kampala. Experience the magic of love in modern Uganda.",
+            published: true
+        },
+        {
+            id: 4,
+            title: "Mystery of the Pearl",
+            author: "James Mugisha",
+            category: "mystery",
+            price: 17000,
+            cover: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=600&fit=crop",
+            description: "An intriguing mystery that unfolds along the shores of Lake Victoria. Detective Kato must solve the case before time runs out.",
+            published: true
+        },
+        {
+            id: 5,
+            title: "African Tales",
+            author: "Mary Nansubuga",
+            category: "fiction",
+            price: 16000,
+            cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=600&fit=crop",
+            description: "A collection of inspiring stories from across Africa, celebrating our rich heritage and diverse cultures.",
+            published: true
+        },
+        {
+            id: 6,
+            title: "Business Excellence",
+            author: "Peter Ssemakula",
+            category: "non-fiction",
+            price: 25000,
+            cover: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400&h=600&fit=crop",
+            description: "A comprehensive guide to building and scaling your business in East Africa. Practical insights from successful entrepreneurs.",
+            published: true
+        },
+        {
+            id: 7,
+            title: "The Hidden Truth",
+            author: "Rebecca Nakato",
+            category: "mystery",
+            price: 19000,
+            cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
+            description: "Secrets buried deep in the past come to light in this gripping mystery thriller. Nothing is as it seems.",
+            published: true
+        },
+        {
+            id: 8,
+            title: "Finding Purpose",
+            author: "Moses Kisakye",
+            category: "self-help",
+            price: 22000,
+            cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&h=600&fit=crop",
+            description: "Discover your true calling and live a life of meaning. Practical exercises and inspirational stories to guide your journey.",
+            published: true
+        }
+    ];
 }
 
 // Load all books
