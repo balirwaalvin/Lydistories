@@ -171,6 +171,63 @@ function isPreviewMode(bookId) {
     return !hasAccess(bookId);
 }
 
+// Sync purchases from Firebase to localStorage
+async function syncPurchasesFromFirebase() {
+    try {
+        // Get user identifier (email, phone, or device ID)
+        const userId = getUserIdentifier();
+        
+        if (!userId) return;
+        
+        // Import firebase service dynamically
+        const { default: firebaseService } = await import('./firebase-service.js');
+        
+        // Get purchases from Firebase
+        const result = await firebaseService.getUserPurchases(userId);
+        
+        if (result.success && result.purchases.length > 0) {
+            // Merge with local purchases
+            const localPurchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+            const allPurchases = [...localPurchases];
+            
+            // Add Firebase purchases that aren't already local
+            result.purchases.forEach(fbPurchase => {
+                const exists = allPurchases.some(p => 
+                    p.bookId == fbPurchase.bookId && p.userId === userId
+                );
+                if (!exists) {
+                    allPurchases.push({
+                        bookId: fbPurchase.bookId,
+                        bookTitle: fbPurchase.bookTitle,
+                        amount: fbPurchase.amount,
+                        provider: fbPurchase.paymentMethod,
+                        userId: userId,
+                        timestamp: fbPurchase.purchasedAt?.toDate?.()?.toISOString() || new Date().toISOString()
+                    });
+                }
+            });
+            
+            // Save merged purchases
+            localStorage.setItem('lydistoriesPurchases', JSON.stringify(allPurchases));
+        }
+    } catch (error) {
+        console.log('Firebase sync not available:', error);
+    }
+}
+
+// Get user identifier from localStorage or generate one
+function getUserIdentifier() {
+    let userId = localStorage.getItem('lydistoriesUserId');
+    
+    if (!userId) {
+        // Generate a unique user ID
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('lydistoriesUserId', userId);
+    }
+    
+    return userId;
+}
+
 // Get book content
 function getBookContent(bookId) {
     // First check localStorage for admin-created content
@@ -192,7 +249,7 @@ function getBookContent(bookId) {
 }
 
 // Initialize reader
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const bookId = urlParams.get('bookId');
 
@@ -200,6 +257,9 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'library.html';
         return;
     }
+
+    // Sync purchases from Firebase first
+    await syncPurchasesFromFirebase();
 
     // Check if user has access or is in preview mode
     const previewMode = isPreviewMode(bookId);

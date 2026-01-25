@@ -486,10 +486,17 @@ function maskCardNumber(cardNumber) {
 
 // Store purchase in Firebase and localStorage
 async function storePurchase(paymentData) {
-    // Store in Firebase
-    const user = firebaseService.getCurrentUser();
-    const userId = user ? user.uid : 'guest';
+    // Get or create user identifier
+    let userId = localStorage.getItem('lydistoriesUserId');
+    if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('lydistoriesUserId', userId);
+    }
     
+    // Add userId to payment data
+    paymentData.userId = userId;
+    
+    // Store in Firebase
     const result = await firebaseService.recordPurchase(
         userId,
         paymentData.bookId,
