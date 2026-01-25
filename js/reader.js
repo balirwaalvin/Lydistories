@@ -166,6 +166,11 @@ function hasAccess(bookId) {
     return purchases.some(purchase => purchase.bookId == bookId);
 }
 
+// Check if book is in preview mode
+function isPreviewMode(bookId) {
+    return !hasAccess(bookId);
+}
+
 // Get book content
 function getBookContent(bookId) {
     // First check localStorage for admin-created content
@@ -196,14 +201,11 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Check access
-    if (!hasAccess(bookId)) {
-        showAccessDenied();
-        return;
-    }
-
-    // Load book
-    loadBook(bookId);
+    // Check if user has access or is in preview mode
+    const previewMode = isPreviewMode(bookId);
+    
+    // Load book (preview or full)
+    loadBook(bookId, previewMode);
     setupReaderControls();
     loadReadingPreferences();
 });
@@ -212,7 +214,7 @@ function showAccessDenied() {
     document.getElementById('accessDeniedModal').style.display = 'block';
 }
 
-function loadBook(bookId) {
+function loadBook(bookId, previewMode = false) {
     const book = booksData.find(b => b.id == bookId);
     if (!book) {
         window.location.href = 'library.html';
@@ -230,31 +232,122 @@ function loadBook(bookId) {
     document.getElementById('readerBookTitle').textContent = book.title;
     document.getElementById('readerBookAuthor').textContent = `by ${book.author}`;
 
+    // Add preview mode indicator if needed
+    if (previewMode) {
+        const titleElement = document.getElementById('readerBookTitle');
+        const previewBadge = document.createElement('span');
+        previewBadge.className = 'preview-badge';
+        previewBadge.innerHTML = '<i class="fas fa-eye"></i> Preview Mode';
+        previewBadge.style.cssText = `
+            display: inline-block;
+            background: #f39c12;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+            vertical-align: middle;
+        `;
+        titleElement.appendChild(previewBadge);
+    }
+
     // Load chapters
     const chapterList = document.getElementById('chapterList');
     chapterList.innerHTML = '';
     content.chapters.forEach((chapter, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<i class="fas fa-book-open"></i> ${chapter.title}`;
+        const isLocked = previewMode && index > 0; // Only first chapter is free in preview
+        
+        li.innerHTML = `
+            <i class="fas ${isLocked ? 'fa-lock' : 'fa-book-open'}"></i> 
+            ${chapter.title}
+            ${isLocked ? '<span class="locked-label">🔒</span>' : ''}
+        `;
         li.dataset.chapterId = chapter.id;
-        if (index === 0) li.classList.add('active');
-        li.addEventListener('click', () => loadChapter(content, chapter.id));
+        
+        if (isLocked) {
+            li.classList.add('locked');
+            li.style.opacity = '0.6';
+            li.style.cursor = 'not-allowed';
+        } else {
+            if (index === 0) li.classList.add('active');
+            li.addEventListener('click', () => loadChapter(content, chapter.id, previewMode, bookId, book));
+        }
+        
         chapterList.appendChild(li);
     });
 
     // Load first chapter
-    loadChapter(content, 1);
+    loadChapter(content, 1, previewMode, bookId, book);
 
     // Store current book for navigation
-    window.currentBook = { bookId, content };
+    window.currentBook = { bookId, content, previewMode, book };
 }
 
-function loadChapter(bookContent, chapterId) {
+function loadChapter(bookContent, chapterId, previewMode = false, bookId = null, book = null) {
     const chapter = bookContent.chapters.find(ch => ch.id === chapterId);
     if (!chapter) return;
 
     const readerContent = document.getElementById('readerContent');
-    readerContent.innerHTML = chapter.content;
+    
+    // In preview mode, show only partial content for first chapter
+    if (previewMode && chapterId === 1) {
+        // Extract first few paragraphs (preview)
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = chapter.content;
+        const paragraphs = tempDiv.querySelectorAll('p');
+        const previewParagraphs = Array.from(paragraphs).slice(0, 3); // Show first 3 paragraphs
+        
+        let previewContent = tempDiv.querySelector('h1') ? tempDiv.querySelector('h1').outerHTML : '';
+        previewParagraphs.forEach(p => {
+            previewContent += p.outerHTML;
+        });
+        
+        // Add paywall overlay
+        readerContent.innerHTML = `
+            ${previewContent}
+            <div class="preview-fade"></div>
+            <div class="paywall-overlay">
+                <div class="paywall-content">
+                    <i class="fas fa-lock" style="font-size: 3rem; color: #3498db; margin-bottom: 20px;"></i>
+                    <h2>Continue Reading?</h2>
+                    <p>You're reading a preview of <strong>${book?.title || 'this book'}</strong></p>
+                    <p>Purchase now to unlock the full book and all chapters!</p>
+                    <div class="paywall-features">
+                        <p><i class="fas fa-check-circle"></i> Full access to all chapters</p>
+                        <p><i class="fas fa-check-circle"></i> Read anytime, anywhere</p>
+                        <p><i class="fas fa-check-circle"></i> Support the author</p>
+                    </div>
+                    <div class="paywall-price">
+                        <span class="price-label">Only</span>
+                        <span class="price-amount">${book?.price || '0'} UGX</span>
+                    </div>
+                    <button onclick="window.location.href='order.html'" class="btn btn-primary btn-large">
+                        <i class="fas fa-shopping-cart"></i> Purchase This Book
+                    </button>
+                    <p class="paywall-footer">
+                        <a href="library.html" style="color: #7f8c8d;">← Back to Library</a>
+                    </p>
+                </div>
+            </div>
+        `;
+    } else if (previewMode && chapterId > 1) {
+        // Locked chapters in preview mode
+        readerContent.innerHTML = `
+            <div class="locked-chapter-message">
+                <i class="fas fa-lock" style="font-size: 4rem; color: #e74c3c; margin-bottom: 20px;"></i>
+                <h2>This Chapter is Locked</h2>
+                <p>Purchase the full book to access all chapters</p>
+                <button onclick="window.location.href='order.html'" class="btn btn-primary">
+                    <i class="fas fa-shopping-cart"></i> Purchase Now
+                </button>
+            </div>
+        `;
+        return;
+    } else {
+        // Full access - show complete chapter
+        readerContent.innerHTML = chapter.content;
+    }
 
     // Update active chapter in list
     document.querySelectorAll('.chapter-list li').forEach(li => {
@@ -270,21 +363,34 @@ function loadChapter(bookContent, chapterId) {
     const nextBtn = document.getElementById('nextChapter');
 
     prevBtn.disabled = currentIndex === 0;
-    nextBtn.disabled = currentIndex === bookContent.chapters.length - 1;
+    
+    // In preview mode, disable next if on first chapter
+    if (previewMode) {
+        nextBtn.disabled = true;
+        nextBtn.title = "Purchase book to continue";
+    } else {
+        nextBtn.disabled = currentIndex === bookContent.chapters.length - 1;
+    }
 
-    prevBtn.onclick = () => currentIndex > 0 && loadChapter(bookContent, bookContent.chapters[currentIndex - 1].id);
-    nextBtn.onclick = () => currentIndex < bookContent.chapters.length - 1 && loadChapter(bookContent, bookContent.chapters[currentIndex + 1].id);
+    prevBtn.onclick = () => currentIndex > 0 && loadChapter(bookContent, bookContent.chapters[currentIndex - 1].id, previewMode, bookId, book);
+    nextBtn.onclick = () => {
+        if (!previewMode && currentIndex < bookContent.chapters.length - 1) {
+            loadChapter(bookContent, bookContent.chapters[currentIndex + 1].id, previewMode, bookId, book);
+        }
+    };
 
     // Update progress
     const progress = ((currentIndex + 1) / bookContent.chapters.length * 100).toFixed(0);
-    document.getElementById('readingProgress').textContent = `${progress}%`;
+    document.getElementById('readingProgress').textContent = previewMode ? 'Preview' : `${progress}%`;
 
     // Scroll to top
     readerContent.scrollTop = 0;
     window.scrollTo(0, 0);
 
-    // Save reading progress
-    saveReadingProgress(window.currentBook.bookId, chapterId);
+    // Save reading progress (only if full access)
+    if (!previewMode && window.currentBook) {
+        saveReadingProgress(window.currentBook.bookId, chapterId);
+    }
 }
 
 function setupReaderControls() {

@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupCategoryFilter();
     setupPaymentOptions();
     setupPaymentForm();
+    setupCardInputFormatting();
 });
 
 // Load books from Firebase
@@ -120,9 +121,25 @@ function setupPaymentOptions() {
             // Add selected class to clicked option
             this.classList.add('selected');
             
-            // Store selected provider
+            // Store selected provider and type
             const provider = this.dataset.provider;
+            const type = this.dataset.type;
             paymentForm.dataset.provider = provider;
+            paymentForm.dataset.type = type;
+            
+            // Hide all payment form sections
+            document.getElementById('mobileMoneyForm').style.display = 'none';
+            document.getElementById('cardPaymentForm').style.display = 'none';
+            document.getElementById('bankTransferForm').style.display = 'none';
+            
+            // Show appropriate form based on type
+            if (type === 'mobile') {
+                document.getElementById('mobileMoneyForm').style.display = 'block';
+            } else if (type === 'card') {
+                document.getElementById('cardPaymentForm').style.display = 'block';
+            } else if (type === 'bank') {
+                document.getElementById('bankTransferForm').style.display = 'block';
+            }
             
             // Show payment form
             if (paymentMethodsSelect) {
@@ -147,19 +164,79 @@ function setupPaymentForm() {
 // Process payment
 function processPayment() {
     const paymentModal = document.getElementById('paymentModal');
-    const phoneNumber = document.getElementById('phoneNumber').value;
-    const customerName = document.getElementById('customerName').value;
-    const customerEmail = document.getElementById('customerEmail').value;
-    const provider = document.getElementById('paymentForm').dataset.provider;
+    const paymentForm = document.getElementById('paymentForm');
+    const provider = paymentForm.dataset.provider;
+    const type = paymentForm.dataset.type;
     
     const bookId = paymentModal.dataset.bookId;
     const bookPrice = paymentModal.dataset.bookPrice;
     const bookTitle = paymentModal.dataset.bookTitle;
 
-    // Validate phone number format (Ugandan format)
-    if (!validatePhoneNumber(phoneNumber)) {
-        showAlert('Please enter a valid Ugandan phone number (e.g., 0772123456)', 'error');
-        return;
+    let paymentData = {
+        bookId: bookId,
+        bookTitle: bookTitle,
+        amount: bookPrice,
+        provider: provider,
+        type: type,
+        timestamp: new Date().toISOString()
+    };
+
+    // Collect data based on payment type
+    if (type === 'mobile') {
+        const phoneNumber = document.getElementById('phoneNumber').value;
+        const customerName = document.getElementById('customerName').value;
+        const customerEmail = document.getElementById('customerEmail').value;
+
+        // Validate phone number format (Ugandan format)
+        if (!validatePhoneNumber(phoneNumber)) {
+            showAlert('Please enter a valid Ugandan phone number (e.g., 0772123456)', 'error');
+            return;
+        }
+
+        paymentData.phoneNumber = phoneNumber;
+        paymentData.customerName = customerName;
+        paymentData.customerEmail = customerEmail;
+
+    } else if (type === 'card') {
+        const cardNumber = document.getElementById('cardNumber').value;
+        const cardExpiry = document.getElementById('cardExpiry').value;
+        const cardCVV = document.getElementById('cardCVV').value;
+        const cardHolderName = document.getElementById('cardHolderName').value;
+        const cardEmail = document.getElementById('cardEmail').value;
+
+        // Validate card details
+        if (!validateCardNumber(cardNumber)) {
+            showAlert('Please enter a valid card number', 'error');
+            return;
+        }
+        if (!validateCardExpiry(cardExpiry)) {
+            showAlert('Please enter a valid expiry date (MM/YY)', 'error');
+            return;
+        }
+        if (!validateCVV(cardCVV)) {
+            showAlert('Please enter a valid CVV', 'error');
+            return;
+        }
+
+        paymentData.cardNumber = maskCardNumber(cardNumber);
+        paymentData.cardExpiry = cardExpiry;
+        paymentData.cardHolderName = cardHolderName;
+        paymentData.customerEmail = cardEmail;
+        paymentData.customerName = cardHolderName;
+
+    } else if (type === 'bank') {
+        const bankTransferName = document.getElementById('bankTransferName').value;
+        const bankTransferEmail = document.getElementById('bankTransferEmail').value;
+        const bankTransferReference = document.getElementById('bankTransferReference').value;
+
+        if (!bankTransferReference || bankTransferReference.length < 5) {
+            showAlert('Please enter a valid transfer reference number', 'error');
+            return;
+        }
+
+        paymentData.customerName = bankTransferName;
+        paymentData.customerEmail = bankTransferEmail;
+        paymentData.transferReference = bankTransferReference;
     }
 
     // Show loading state
@@ -170,23 +247,9 @@ function processPayment() {
 
     // Simulate payment processing
     // In a real implementation, this would call your backend API
-    // which would integrate with MTN Mobile Money or Airtel Money APIs
-    
-    const paymentData = {
-        bookId: bookId,
-        bookTitle: bookTitle,
-        amount: bookPrice,
-        phoneNumber: phoneNumber,
-        customerName: customerName,
-        customerEmail: customerEmail,
-        provider: provider,
-        timestamp: new Date().toISOString()
-    };
-
-    // Simulate API call with timeout
     setTimeout(() => {
-        // In production, check actual payment status from API
-        const paymentSuccess = true; // Simulated success
+        // Simulate payment success (in production, check actual payment status from API)
+        const paymentSuccess = true;
         
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
@@ -199,17 +262,22 @@ function processPayment() {
             paymentModal.style.display = 'none';
             
             // Show success message with library link
-            showSuccessWithLibraryLink(bookTitle, provider);
+            showSuccessWithLibraryLink(bookTitle, provider, type);
             
             // Reset form
-            document.getElementById('paymentForm').reset();
-            document.getElementById('paymentForm').style.display = 'none';
+            paymentForm.reset();
+            paymentForm.style.display = 'none';
             document.querySelector('.payment-methods-select').style.display = 'block';
             document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+            
+            // Reset form sections
+            document.getElementById('mobileMoneyForm').style.display = 'none';
+            document.getElementById('cardPaymentForm').style.display = 'none';
+            document.getElementById('bankTransferForm').style.display = 'none';
         } else {
             showAlert('Payment failed. Please try again or contact support.', 'error');
         }
-    }, 2000);
+    }, 2500);
 }
 
 // Validate Ugandan phone number
@@ -222,6 +290,71 @@ function validatePhoneNumber(phone) {
     const ugandaPattern = /^0[7][0-9]{8}$/;
     
     return ugandaPattern.test(phone);
+}
+
+// Validate card number (basic Luhn algorithm)
+function validateCardNumber(cardNumber) {
+    // Remove spaces
+    cardNumber = cardNumber.replace(/\s/g, '');
+    
+    // Check if only digits and correct length
+    if (!/^\d{13,19}$/.test(cardNumber)) {
+        return false;
+    }
+    
+    // Luhn algorithm
+    let sum = 0;
+    let isEven = false;
+    
+    for (let i = cardNumber.length - 1; i >= 0; i--) {
+        let digit = parseInt(cardNumber.charAt(i), 10);
+        
+        if (isEven) {
+            digit *= 2;
+            if (digit > 9) {
+                digit -= 9;
+            }
+        }
+        
+        sum += digit;
+        isEven = !isEven;
+    }
+    
+    return (sum % 10) === 0;
+}
+
+// Validate card expiry date
+function validateCardExpiry(expiry) {
+    if (!/^\d{2}\/\d{2}$/.test(expiry)) {
+        return false;
+    }
+    
+    const [month, year] = expiry.split('/').map(num => parseInt(num, 10));
+    
+    if (month < 1 || month > 12) {
+        return false;
+    }
+    
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100; // Get last 2 digits
+    const currentMonth = currentDate.getMonth() + 1;
+    
+    if (year < currentYear || (year === currentYear && month < currentMonth)) {
+        return false;
+    }
+    
+    return true;
+}
+
+// Validate CVV
+function validateCVV(cvv) {
+    return /^\d{3,4}$/.test(cvv);
+}
+
+// Mask card number for storage
+function maskCardNumber(cardNumber) {
+    cardNumber = cardNumber.replace(/\s/g, '');
+    return '**** **** **** ' + cardNumber.slice(-4);
 }
 
 // Store purchase in Firebase and localStorage
@@ -282,7 +415,17 @@ function showAlert(message, type) {
 }
 
 // Show success message with library link
-function showSuccessWithLibraryLink(bookTitle, provider) {
+function showSuccessWithLibraryLink(bookTitle, provider, type) {
+    let paymentMethodText = '';
+    
+    if (type === 'mobile') {
+        paymentMethodText = provider === 'mtn' ? 'MTN Mobile Money' : 'Airtel Money';
+    } else if (type === 'card') {
+        paymentMethodText = provider === 'visa' ? 'VISA' : 'MasterCard';
+    } else if (type === 'bank') {
+        paymentMethodText = 'Bank Transfer';
+    }
+    
     const alert = document.createElement('div');
     alert.className = 'alert alert-success';
     alert.style.cssText = `
@@ -300,11 +443,21 @@ function showSuccessWithLibraryLink(bookTitle, provider) {
         text-align: center;
         animation: slideDown 0.3s ease;
     `;
+    
+    let additionalMessage = '';
+    if (type === 'mobile') {
+        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Check your ${paymentMethodText} phone for the payment confirmation.</p>`;
+    } else if (type === 'card') {
+        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Your ${paymentMethodText} payment has been processed successfully.</p>`;
+    } else if (type === 'bank') {
+        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Your bank transfer will be verified within 24 hours. You'll receive email confirmation.</p>`;
+    }
+    
     alert.innerHTML = `
         <i class="fas fa-check-circle" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
         <h3 style="margin-bottom: 10px;">Payment Successful!</h3>
         <p style="margin-bottom: 15px;">You now have full access to "${bookTitle}"</p>
-        <p style="font-size: 0.9rem; margin-bottom: 20px;">Check your ${provider === 'mtn' ? 'MTN' : 'Airtel'} phone for the payment confirmation.</p>
+        ${additionalMessage}
         <div style="display: flex; gap: 10px; justify-content: center;">
             <button onclick="window.location.href='library.html'" class="btn btn-primary" style="background: white; color: #27ae60;">
                 <i class="fas fa-book-reader"></i> Go to My Library
@@ -324,6 +477,39 @@ function showSuccessWithLibraryLink(bookTitle, provider) {
             setTimeout(() => alert.remove(), 300);
         }
     }, 10000);
+}
+
+// Setup card input formatting
+function setupCardInputFormatting() {
+    // Format card number with spaces
+    const cardNumberInput = document.getElementById('cardNumber');
+    if (cardNumberInput) {
+        cardNumberInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\s/g, '');
+            let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+            e.target.value = formattedValue;
+        });
+    }
+    
+    // Format expiry date as MM/YY
+    const cardExpiryInput = document.getElementById('cardExpiry');
+    if (cardExpiryInput) {
+        cardExpiryInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length >= 2) {
+                value = value.slice(0, 2) + '/' + value.slice(2, 4);
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // Only allow numbers in CVV
+    const cardCVVInput = document.getElementById('cardCVV');
+    if (cardCVVInput) {
+        cardCVVInput.addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '');
+        });
+    }
 }
 
 // Add animation styles

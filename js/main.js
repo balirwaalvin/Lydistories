@@ -171,6 +171,14 @@ function showBookModal(book) {
             showPaymentModal(book);
         };
     }
+    
+    // Add preview button functionality
+    const previewBtn = document.getElementById('previewBtn');
+    if (previewBtn) {
+        previewBtn.onclick = () => {
+            window.location.href = `reader.html?bookId=${book.id}`;
+        };
+    }
 }
 
 // Show payment modal
