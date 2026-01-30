@@ -399,19 +399,29 @@ function processPayment() {
     const submitBtn = paymentForm.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    
+    // Update button text based on payment type
+    if (type === 'mobile') {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending payment request to ' + (provider === 'mtn' ? 'MTN' : 'Airtel') + '...';
+    } else if (type === 'card') {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing ' + (provider === 'visa' ? 'VISA' : 'MasterCard') + ' payment...';
+    } else if (type === 'bank') {
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying bank transfer...';
+    }
 
-    // Simulate payment processing
-    // In a real implementation, this would call your backend API
+    // Simulate payment processing (realistic timing for each payment type)
+    // In a real implementation, this would call your backend payment API
+    const processingTime = type === 'bank' ? 3000 : (type === 'card' ? 2500 : 3500);
+    
     setTimeout(() => {
-        // Simulate payment success (in production, check actual payment status from API)
-        const paymentSuccess = true;
+        // Simulate payment success (95% success rate simulation)
+        const paymentSuccess = Math.random() > 0.05; // 95% success rate
         
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalBtnText;
 
         if (paymentSuccess) {
-            // Store purchase in localStorage (in production, this would be in a database)
+            // Store purchase in localStorage and Firebase
             storePurchase(paymentData);
             
             // Close payment modal
@@ -431,9 +441,18 @@ function processPayment() {
             document.getElementById('cardPaymentForm').style.display = 'none';
             document.getElementById('bankTransferForm').style.display = 'none';
         } else {
-            showAlert('Payment failed. Please try again or contact support.', 'error');
+            // Show appropriate error message
+            let errorMsg = 'Payment failed. Please try again.';
+            if (type === 'mobile') {
+                errorMsg = 'Mobile money payment failed. Please check your balance and try again.';
+            } else if (type === 'card') {
+                errorMsg = 'Card payment declined. Please check your card details or try another card.';
+            } else if (type === 'bank') {
+                errorMsg = 'Bank transfer verification failed. Please check your reference number.';
+            }
+            showAlert(errorMsg, 'error');
         }
-    }, 2500);
+    }, processingTime);
 }
 
 // Validate Ugandan phone number
@@ -580,13 +599,21 @@ function showAlert(message, type) {
 // Show success message with library link
 function showSuccessWithLibraryLink(bookTitle, provider, type) {
     let paymentMethodText = '';
+    let successIcon = 'fa-check-circle';
+    let iconColor = '#27ae60';
     
     if (type === 'mobile') {
         paymentMethodText = provider === 'mtn' ? 'MTN Mobile Money' : 'Airtel Money';
+        successIcon = 'fa-mobile-alt';
+        iconColor = provider === 'mtn' ? '#FFCB05' : '#ED1C24';
     } else if (type === 'card') {
         paymentMethodText = provider === 'visa' ? 'VISA' : 'MasterCard';
+        successIcon = 'fa-credit-card';
+        iconColor = provider === 'visa' ? '#1434CB' : '#EB001B';
     } else if (type === 'bank') {
         paymentMethodText = 'Bank Transfer';
+        successIcon = 'fa-university';
+        iconColor = '#2c3e50';
     }
     
     const alert = document.createElement('div');
@@ -596,50 +623,70 @@ function showSuccessWithLibraryLink(bookTitle, provider, type) {
         top: 100px;
         left: 50%;
         transform: translateX(-50%);
-        background: #27ae60;
+        background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
         color: white;
-        padding: 25px 35px;
-        border-radius: 10px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        padding: 30px 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         z-index: 3000;
         max-width: 600px;
         text-align: center;
-        animation: slideDown 0.3s ease;
+        animation: slideDown 0.5s ease;
+        border: 3px solid rgba(255,255,255,0.3);
     `;
     
     let additionalMessage = '';
     if (type === 'mobile') {
-        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Check your ${paymentMethodText} phone for the payment confirmation.</p>`;
+        additionalMessage = `
+            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                <i class="fas fa-info-circle"></i> 
+                <p style="font-size: 0.9rem; margin: 5px 0;">Payment request sent to your ${paymentMethodText} account.</p>
+                <p style="font-size: 0.85rem; margin: 0; opacity: 0.9;">You'll receive an SMS confirmation shortly.</p>
+            </div>
+        `;
     } else if (type === 'card') {
-        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Your ${paymentMethodText} payment has been processed successfully.</p>`;
+        additionalMessage = `
+            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                <i class="fas fa-shield-alt"></i> 
+                <p style="font-size: 0.9rem; margin: 5px 0;">Your ${paymentMethodText} payment was processed securely.</p>
+                <p style="font-size: 0.85rem; margin: 0; opacity: 0.9;">Transaction ID: TXN-${Date.now().toString().slice(-8)}</p>
+            </div>
+        `;
     } else if (type === 'bank') {
-        additionalMessage = `<p style="font-size: 0.9rem; margin-bottom: 20px;">Your bank transfer will be verified within 24 hours. You'll receive email confirmation.</p>`;
+        additionalMessage = `
+            <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                <i class="fas fa-clock"></i> 
+                <p style="font-size: 0.9rem; margin: 5px 0;">Bank transfer received and verified.</p>
+                <p style="font-size: 0.85rem; margin: 0; opacity: 0.9;">A receipt has been sent to your email.</p>
+            </div>
+        `;
     }
     
     alert.innerHTML = `
-        <i class="fas fa-check-circle" style="font-size: 2.5rem; margin-bottom: 15px;"></i>
-        <h3 style="margin-bottom: 10px;">Payment Successful!</h3>
-        <p style="margin-bottom: 15px;">You now have full access to "${bookTitle}"</p>
+        <i class="fas ${successIcon}" style="font-size: 3.5rem; margin-bottom: 15px; color: ${iconColor === '#27ae60' ? 'white' : iconColor}; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));"></i>
+        <h2 style="margin-bottom: 10px; font-size: 1.8rem;">Payment Successful!</h2>
+        <p style="margin-bottom: 10px; font-size: 1.1rem; font-weight: 500;">You now have full access to "${bookTitle}"</p>
+        <p style="margin-bottom: 15px; font-size: 0.9rem; opacity: 0.9;">via ${paymentMethodText}</p>
         ${additionalMessage}
-        <div style="display: flex; gap: 10px; justify-content: center;">
-            <button onclick="window.location.href='library.html'" class="btn btn-primary" style="background: white; color: #27ae60;">
-                <i class="fas fa-book-reader"></i> Go to My Library
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px;">
+            <button onclick="window.location.href='library.html'" class="btn btn-primary" style="background: white; color: #27ae60; font-weight: 600; padding: 12px 24px;">
+                <i class="fas fa-book-reader"></i> Open My Library
             </button>
-            <button onclick="this.closest('.alert').remove()" class="btn btn-secondary" style="background: rgba(255,255,255,0.2);">
-                Continue Shopping
+            <button onclick="this.closest('.alert').remove()" class="btn btn-secondary" style="background: rgba(255,255,255,0.2); color: white; font-weight: 600; padding: 12px 24px;">
+                <i class="fas fa-shopping-cart"></i> Continue Shopping
             </button>
         </div>
     `;
 
     document.body.appendChild(alert);
 
-    // Auto-remove after 10 seconds
+    // Auto-remove after 12 seconds
     setTimeout(() => {
         if (alert.parentElement) {
-            alert.style.animation = 'fadeOut 0.3s ease';
-            setTimeout(() => alert.remove(), 300);
+            alert.style.animation = 'fadeOut 0.5s ease';
+            setTimeout(() => alert.remove(), 500);
         }
-    }, 10000);
+    }, 12000);
 }
 
 // Setup card input formatting
