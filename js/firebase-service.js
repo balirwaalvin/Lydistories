@@ -300,7 +300,129 @@ class FirebaseService {
         }
     }
 
-    // ============ Image Upload ============
+    // ============ Content Management (Books, Articles, Study Guides) ============
+    
+    // Add content (book, article, or study guide)
+    async addContent(contentData) {
+        try {
+            const docRef = await addDoc(collection(db, 'content'), {
+                ...contentData,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            });
+            return { success: true, id: docRef.id };
+        } catch (error) {
+            console.error('Error adding content:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Get all content (with optional type filter)
+    async getAllContent(contentType = null) {
+        try {
+            let q;
+            if (contentType) {
+                q = query(collection(db, 'content'), where('type', '==', contentType), orderBy('createdAt', 'desc'));
+            } else {
+                q = query(collection(db, 'content'), orderBy('createdAt', 'desc'));
+            }
+            
+            const querySnapshot = await getDocs(q);
+            const content = [];
+            querySnapshot.forEach((doc) => {
+                content.push({ id: doc.id, ...doc.data() });
+            });
+            return { success: true, content };
+        } catch (error) {
+            console.error('Error getting content:', error);
+            return { success: false, error: error.message, content: [] };
+        }
+    }
+
+    // Get content by ID
+    async getContentById(contentId) {
+        try {
+            const docRef = doc(db, 'content', contentId);
+            const docSnap = await getDoc(docRef);
+            
+            if (docSnap.exists()) {
+                return { success: true, content: { id: docSnap.id, ...docSnap.data() } };
+            } else {
+                return { success: false, error: 'Content not found' };
+            }
+        } catch (error) {
+            console.error('Error getting content:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Update content
+    async updateContent(contentId, contentData) {
+        try {
+            await updateDoc(doc(db, 'content', contentId), {
+                ...contentData,
+                updatedAt: serverTimestamp()
+            });
+            return { success: true };
+        } catch (error) {
+            console.error('Error updating content:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Delete content
+    async deleteContent(contentId) {
+        try {
+            await deleteDoc(doc(db, 'content', contentId));
+            return { success: true };
+        } catch (error) {
+            console.error('Error deleting content:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ============ File Upload (PDFs, Documents) ============
+    
+    // Upload document (PDF, DOCX, etc.)
+    async uploadDocument(file, contentId, contentType) {
+        try {
+            const timestamp = Date.now();
+            const fileName = `${contentType}/${contentId}_${timestamp}_${file.name}`;
+            const storageRef = ref(storage, `documents/${fileName}`);
+            
+            const snapshot = await uploadBytes(storageRef, file, {
+                contentType: file.type
+            });
+            
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            
+            return { 
+                success: true, 
+                url: downloadURL,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type
+            };
+        } catch (error) {
+            console.error('Error uploading document:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // Upload cover image
+    async uploadCoverImage(file, contentId) {
+        try {
+            const storageRef = ref(storage, `covers/${contentId}_${Date.now()}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return { success: true, url: downloadURL };
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ============ Image Upload (Legacy - for backward compatibility) ============
     
     // Upload book cover image
     async uploadBookCover(file, bookId) {
@@ -311,6 +433,28 @@ class FirebaseService {
             return { success: true, url: downloadURL };
         } catch (error) {
             console.error('Error uploading image:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ============ Content Parsing ============
+    
+    // Parse PDF text content (client-side preview)
+    async parsePDFPreview(file) {
+        try {
+            // This would require PDF.js library for full implementation
+            // For now, return file metadata
+            return {
+                success: true,
+                metadata: {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    lastModified: new Date(file.lastModified)
+                }
+            };
+        } catch (error) {
+            console.error('Error parsing PDF:', error);
             return { success: false, error: error.message };
         }
     }

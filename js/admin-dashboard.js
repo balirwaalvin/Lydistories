@@ -1,5 +1,6 @@
 // Import Firebase service
 import firebaseService from './firebase-service.js';
+import * as ContentManager from './admin-content.js';
 
 console.log('Admin dashboard script loaded');
 
@@ -20,6 +21,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         console.log('Loading dashboard stats...');
         await loadDashboardStats();
+        console.log('Loading content...');
+        await ContentManager.loadAllContent();
+        await ContentManager.loadContentByType('book');
+        await ContentManager.loadContentByType('article');
+        await ContentManager.loadContentByType('guide');
         console.log('Loading books table...');
         await loadBooksTable();
         console.log('Loading orders table...');
@@ -32,6 +38,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupNavigation();
         console.log('Setting up form listeners...');
         setupFormListeners();
+        console.log('Setting up filter tabs...');
+        ContentManager.setupFilterTabs();
         console.log('Dashboard initialized successfully');
     } catch (error) {
         console.error('Error initializing dashboard:', error);
@@ -73,17 +81,26 @@ function setupNavigation() {
 
 // Load dashboard statistics
 async function loadDashboardStats() {
-    // Load from Firebase
-    const booksResult = await firebaseService.getAllBooks();
-    const books = booksResult.success ? booksResult.books : JSON.parse(localStorage.getItem('lydistoriesBooks') || JSON.stringify(window.booksData || []));
+    // Load content from Firebase
+    const contentResult = await firebaseService.getAllContent();
+    const content = contentResult.success ? contentResult.content : [];
     
+    // Count by type
+    const books = content.filter(c => c.type === 'book').length;
+    const articles = content.filter(c => c.type === 'article').length;
+    const guides = content.filter(c => c.type === 'guide').length;
+    
+    // Load purchases
     const purchasesResult = await firebaseService.getUserPurchases('guest'); // Get all purchases
     const purchases = purchasesResult.success ? purchasesResult.purchases : JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
     
+    // Load messages
     const messagesResult = await firebaseService.getAllMessages();
     const messages = messagesResult.success ? messagesResult.messages : JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
     
-    document.getElementById('totalBooks').textContent = books.length;
+    document.getElementById('totalBooks').textContent = books;
+    document.getElementById('totalArticles').textContent = articles;
+    document.getElementById('totalGuides').textContent = guides;
     document.getElementById('totalOrders').textContent = purchases.length;
     
     const totalRevenue = purchases.reduce((sum, purchase) => sum + parseInt(purchase.amount || 0), 0);
@@ -359,6 +376,11 @@ function setupFormListeners() {
     const bookForm = document.getElementById('bookForm');
     if (bookForm) {
         bookForm.addEventListener('submit', handleBookFormSubmit);
+    }
+    
+    const contentForm = document.getElementById('contentForm');
+    if (contentForm) {
+        contentForm.addEventListener('submit', ContentManager.handleContentFormSubmit);
     }
 }
 
@@ -921,6 +943,10 @@ window.saveAllChapters = saveAllChapters;
 window.insertFormatting = insertFormatting;
 window.loadChapterEditor = loadChapterEditor;
 window.openWritersChapterEditor = openWritersChapterEditor;
+
+// Content management functions
+window.showAddContentModal = ContentManager.showAddContentModal;
+window.closeContentModal = ContentManager.closeContentModal;
 window.loadWritersRoomBooks = loadWritersRoomBooks;
 window.switchCoverTab = switchCoverTab;
 window.handleCoverImageSelect = handleCoverImageSelect;

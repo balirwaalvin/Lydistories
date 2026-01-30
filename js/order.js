@@ -53,6 +53,35 @@ function loadAllBooksInstantly() {
 // Sync with Firebase in background (non-blocking)
 async function syncWithFirebaseInBackground() {
     try {
+        // Try to load from new content collection first
+        const contentResult = await firebaseService.getAllContent();
+        
+        if (contentResult.success && contentResult.content.length > 0) {
+            // Update localStorage with Firebase content data
+            const publishedContent = contentResult.content.filter(c => c.published !== false);
+            localStorage.setItem('lydistoriesBooks', JSON.stringify(publishedContent));
+            
+            // Check if there are new items not currently displayed
+            const currentIds = window.booksData.map(b => b.id);
+            const newContent = publishedContent.filter(c => !currentIds.includes(c.id));
+            
+            if (newContent.length > 0) {
+                // Add new content to display
+                window.booksData = publishedContent;
+                const booksGrid = document.getElementById('booksGrid');
+                if (booksGrid && booksGrid.children.length > 0) {
+                    // Refresh display to show new content
+                    booksGrid.innerHTML = '';
+                    window.booksData.forEach(item => {
+                        const bookCard = createBookCard(item);
+                        booksGrid.appendChild(bookCard);
+                    });
+                }
+            }
+            return; // Exit if content collection has data
+        }
+        
+        // Fallback to old books collection for backward compatibility
         const result = await firebaseService.getAllBooks();
         
         if (result.success && result.books.length > 0) {

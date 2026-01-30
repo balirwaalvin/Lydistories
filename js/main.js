@@ -131,14 +131,33 @@ function loadFeaturedBooks() {
 function createBookCard(book) {
     const card = document.createElement('div');
     card.className = 'book-card';
+    
+    // Determine content type badge
+    const contentType = book.type || 'book';
+    const typeIcons = {
+        'book': 'fa-book',
+        'article': 'fa-newspaper',
+        'guide': 'fa-graduation-cap'
+    };
+    const typeLabels = {
+        'book': 'Book',
+        'article': 'Article',
+        'guide': 'Study Guide'
+    };
+    const typeIcon = typeIcons[contentType] || 'fa-book';
+    const typeLabel = typeLabels[contentType] || 'Book';
+    
     card.innerHTML = `
+        <div class="content-type-badge-overlay ${contentType}">
+            <i class="fas ${typeIcon}"></i> ${typeLabel}
+        </div>
         <img src="${book.cover}" alt="${book.title}" class="book-cover">
         <div class="book-info">
             <h3>${book.title}</h3>
             <p class="book-author"><i class="fas fa-user"></i> ${book.author}</p>
             <p class="book-description">${book.description.substring(0, 100)}...</p>
             <p class="book-price">${book.price.toLocaleString()} UGX</p>
-            <span class="book-category">${book.category}</span>
+            <span class="book-category">${book.category || book.subject || 'General'}</span>
         </div>
     `;
 

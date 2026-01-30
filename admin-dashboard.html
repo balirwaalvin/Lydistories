@@ -32,8 +32,17 @@
                 <li class="active" data-section="dashboard">
                     <i class="fas fa-tachometer-alt"></i> Dashboard
                 </li>
+                <li data-section="content">
+                    <i class="fas fa-layer-group"></i> All Content
+                </li>
                 <li data-section="books">
-                    <i class="fas fa-book"></i> Manage Books
+                    <i class="fas fa-book"></i> Books
+                </li>
+                <li data-section="articles">
+                    <i class="fas fa-newspaper"></i> Articles
+                </li>
+                <li data-section="guides">
+                    <i class="fas fa-graduation-cap"></i> Study Guides
                 </li>
                 <li data-section="writers">
                     <i class="fas fa-pen-fancy"></i> Writers Room
@@ -63,7 +72,27 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="totalBooks">0</h3>
-                            <p>Total Books</p>
+                            <p>Books</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #9b59b6;">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalArticles">0</h3>
+                            <p>Articles</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: #1abc9c;">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalGuides">0</h3>
+                            <p>Study Guides</p>
                         </div>
                     </div>
                     
@@ -73,7 +102,7 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="totalOrders">0</h3>
-                            <p>Total Orders</p>
+                            <p>Orders</p>
                         </div>
                     </div>
                     
@@ -83,7 +112,7 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="totalRevenue">0</h3>
-                            <p>Total Revenue (UGX)</p>
+                            <p>Revenue (UGX)</p>
                         </div>
                     </div>
                     
@@ -104,11 +133,48 @@
                 </div>
             </section>
 
+            <!-- All Content Section -->
+            <section id="content-section" class="admin-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-layer-group"></i> All Content</h1>
+                    <button onclick="showAddContentModal()" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Content
+                    </button>
+                </div>
+
+                <div class="content-filter-tabs">
+                    <button class="filter-tab active" data-filter="all">All</button>
+                    <button class="filter-tab" data-filter="book">Books</button>
+                    <button class="filter-tab" data-filter="article">Articles</button>
+                    <button class="filter-tab" data-filter="guide">Study Guides</button>
+                </div>
+
+                <div class="content-table-container">
+                    <table class="admin-table" id="contentTable">
+                        <thead>
+                            <tr>
+                                <th>Cover</th>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Price (UGX)</th>
+                                <th>Format</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="contentTableBody">
+                            <!-- Content will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
             <!-- Books Management Section -->
             <section id="books-section" class="admin-section">
                 <div class="section-header">
-                    <h1><i class="fas fa-book"></i> Manage Books</h1>
-                    <button onclick="showAddBookModal()" class="btn btn-primary">
+                    <h1><i class="fas fa-book"></i> Books</h1>
+                    <button onclick="showAddContentModal('book')" class="btn btn-primary">
                         <i class="fas fa-plus"></i> Add New Book
                     </button>
                 </div>
@@ -127,6 +193,64 @@
                         </thead>
                         <tbody id="booksTableBody">
                             <!-- Books will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Articles Section -->
+            <section id="articles-section" class="admin-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-newspaper"></i> Articles</h1>
+                    <button onclick="showAddContentModal('article')" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Article
+                    </button>
+                </div>
+
+                <div class="content-table-container">
+                    <table class="admin-table" id="articlesTable">
+                        <thead>
+                            <tr>
+                                <th>Cover</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Category</th>
+                                <th>Price (UGX)</th>
+                                <th>Format</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="articlesTableBody">
+                            <!-- Articles will be loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Study Guides Section -->
+            <section id="guides-section" class="admin-section">
+                <div class="section-header">
+                    <h1><i class="fas fa-graduation-cap"></i> Study Guides</h1>
+                    <button onclick="showAddContentModal('guide')" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add New Study Guide
+                    </button>
+                </div>
+
+                <div class="content-table-container">
+                    <table class="admin-table" id="guidesTable">
+                        <thead>
+                            <tr>
+                                <th>Cover</th>
+                                <th>Title</th>
+                                <th>Author</th>
+                                <th>Subject</th>
+                                <th>Price (UGX)</th>
+                                <th>Format</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="guidesTableBody">
+                            <!-- Study guides will be loaded here -->
                         </tbody>
                     </table>
                 </div>
@@ -368,6 +492,192 @@ Just write naturally - paragraphs are separated by blank lines."></textarea>
                     Close
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Content Modal (Books, Articles, Study Guides) -->
+    <div id="contentModal" class="modal">
+        <div class="modal-content admin-modal-content large-modal">
+            <span class="close" onclick="closeContentModal()">&times;</span>
+            <h2 id="contentModalTitle"><i class="fas fa-plus"></i> Add New Content</h2>
+            
+            <form id="contentForm" class="admin-form">
+                <input type="hidden" id="contentId">
+                
+                <!-- Content Type Selection -->
+                <div class="form-group">
+                    <label for="contentType">Content Type *</label>
+                    <select id="contentType" required onchange="updateContentFormFields()">
+                        <option value="">Select content type</option>
+                        <option value="book">Book</option>
+                        <option value="article">Article</option>
+                        <option value="guide">Study Guide</option>
+                    </select>
+                </div>
+
+                <!-- Basic Information -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contentTitle">Title *</label>
+                        <input type="text" id="contentTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contentAuthor">Author *</label>
+                        <input type="text" id="contentAuthor" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contentCategory" id="categoryLabel">Category *</label>
+                        <select id="contentCategory" required>
+                            <option value="">Select category</option>
+                            <option value="fiction">Fiction</option>
+                            <option value="non-fiction">Non-Fiction</option>
+                            <option value="romance">Romance</option>
+                            <option value="mystery">Mystery</option>
+                            <option value="self-help">Self-Help</option>
+                            <option value="business">Business</option>
+                            <option value="technology">Technology</option>
+                            <option value="science">Science</option>
+                            <option value="history">History</option>
+                            <option value="education">Education</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="contentPrice">Price (UGX) *</label>
+                        <input type="number" id="contentPrice" min="0" step="1000" required>
+                    </div>
+                </div>
+
+                <!-- Content Format -->
+                <div class="form-group">
+                    <label for="contentFormat">Content Format *</label>
+                    <select id="contentFormat" required onchange="updateFormatFields()">
+                        <option value="">Select format</option>
+                        <option value="chapters">Chapters (Write in Editor)</option>
+                        <option value="pdf">PDF Document</option>
+                        <option value="document">Document (DOCX, TXT)</option>
+                    </select>
+                </div>
+
+                <!-- Document Upload Section (shown when PDF/Document is selected) -->
+                <div id="documentUploadSection" class="form-group" style="display: none;">
+                    <label>Upload Document *</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="contentDocument" accept=".pdf,.doc,.docx,.txt" onchange="handleDocumentSelect(event)">
+                        <label for="contentDocument" class="file-upload-label">
+                            <i class="fas fa-file-upload"></i>
+                            <span id="docLabel">Choose PDF/Document or drag & drop</span>
+                        </label>
+                        <div id="docUploadProgress" class="upload-progress" style="display: none;">
+                            <div class="progress-bar">
+                                <div id="docProgressFill" class="progress-fill"></div>
+                            </div>
+                            <span id="docProgressText">Uploading...</span>
+                        </div>
+                        <div id="documentInfo" class="document-info" style="display: none;">
+                            <i class="fas fa-file-pdf"></i>
+                            <span id="docFileName"></span>
+                            <span id="docFileSize"></span>
+                            <button type="button" class="btn-remove-doc" onclick="removeDocument()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <small>Supported formats: PDF, DOCX, DOC, TXT (Max 50MB)</small>
+                </div>
+
+                <!-- Cover Image -->
+                <div class="form-group">
+                    <label>Cover Image *</label>
+                    <div class="cover-upload-options">
+                        <div class="upload-option-tabs">
+                            <button type="button" class="upload-tab active" data-tab="url" onclick="switchContentCoverTab('url')">
+                                <i class="fas fa-link"></i> Image URL
+                            </button>
+                            <button type="button" class="upload-tab" data-tab="upload" onclick="switchContentCoverTab('upload')">
+                                <i class="fas fa-upload"></i> Upload Image
+                            </button>
+                        </div>
+                        
+                        <div id="contentUrlTab" class="upload-tab-content active">
+                            <input type="url" id="contentCover" placeholder="https://example.com/image.jpg">
+                            <small>Use a direct image URL (e.g., from Unsplash, Imgur, etc.)</small>
+                        </div>
+                        
+                        <div id="contentUploadTab" class="upload-tab-content">
+                            <div class="file-upload-wrapper">
+                                <input type="file" id="contentCoverFile" accept="image/*" onchange="handleContentCoverSelect(event)">
+                                <label for="contentCoverFile" class="file-upload-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span id="contentFileLabel">Choose image or drag & drop</span>
+                                </label>
+                                <div id="contentUploadProgress" class="upload-progress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div id="contentProgressFill" class="progress-fill"></div>
+                                    </div>
+                                    <span id="contentProgressText">Uploading...</span>
+                                </div>
+                                <div id="contentImagePreview" class="image-preview" style="display: none;">
+                                    <img id="contentPreviewImg" src="" alt="Preview">
+                                    <button type="button" class="btn-remove-image" onclick="removeContentCover()">
+                                        <i class="fas fa-times"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="form-group">
+                    <label for="contentDescription">Description *</label>
+                    <textarea id="contentDescription" rows="4" required placeholder="Enter a detailed description..."></textarea>
+                </div>
+
+                <!-- Additional Fields for Study Guides -->
+                <div id="guideFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="guideLevel">Education Level</label>
+                            <select id="guideLevel">
+                                <option value="">Select level</option>
+                                <option value="primary">Primary</option>
+                                <option value="secondary">Secondary (O-Level)</option>
+                                <option value="advanced">Advanced (A-Level)</option>
+                                <option value="university">University</option>
+                                <option value="professional">Professional</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="guideSubject">Subject</label>
+                            <input type="text" id="guideSubject" placeholder="e.g., Mathematics, Physics">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Publication Status -->
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="contentPublished" style="width: auto; margin-right: 8px;">
+                        Published (visible on website)
+                    </label>
+                    <small>Uncheck to save as draft</small>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Content
+                    </button>
+                    <button type="button" onclick="closeContentModal()" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
