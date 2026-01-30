@@ -283,18 +283,32 @@ function setupPaymentOptions() {
             paymentForm.dataset.provider = provider;
             paymentForm.dataset.type = type;
             
-            // Hide all payment form sections
+            // Hide all payment form sections and remove required from all fields
             document.getElementById('mobileMoneyForm').style.display = 'none';
             document.getElementById('cardPaymentForm').style.display = 'none';
             document.getElementById('bankTransferForm').style.display = 'none';
             
-            // Show appropriate form based on type
+            // Remove required attribute from all payment form inputs
+            document.querySelectorAll('#mobileMoneyForm input, #cardPaymentForm input, #bankTransferForm input').forEach(input => {
+                input.removeAttribute('required');
+            });
+            
+            // Show appropriate form based on type and add required to visible fields
             if (type === 'mobile') {
                 document.getElementById('mobileMoneyForm').style.display = 'block';
+                document.querySelectorAll('#mobileMoneyForm input').forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
             } else if (type === 'card') {
                 document.getElementById('cardPaymentForm').style.display = 'block';
+                document.querySelectorAll('#cardPaymentForm input').forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
             } else if (type === 'bank') {
                 document.getElementById('bankTransferForm').style.display = 'block';
+                document.querySelectorAll('#bankTransferForm input').forEach(input => {
+                    input.setAttribute('required', 'required');
+                });
             }
             
             // Show payment form
