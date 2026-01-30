@@ -309,33 +309,54 @@ function setupPaymentOptions() {
 // Setup payment form submission
 function setupPaymentForm() {
     const paymentForm = document.getElementById('paymentForm');
-    if (!paymentForm) return;
+    if (!paymentForm) {
+        console.error('Payment form not found');
+        return;
+    }
 
     paymentForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        console.log('Payment form submitted');
         processPayment();
     });
 }
 
 // Process payment
-function processPayment() {
-    const paymentModal = document.getElementById('paymentModal');
-    const paymentForm = document.getElementById('paymentForm');
-    const provider = paymentForm.dataset.provider;
-    const type = paymentForm.dataset.type;
-    
-    const bookId = paymentModal.dataset.bookId;
-    const bookPrice = paymentModal.dataset.bookPrice;
-    const bookTitle = paymentModal.dataset.bookTitle;
+async function processPayment() {
+    try {
+        console.log('processPayment called');
+        const paymentModal = document.getElementById('paymentModal');
+        const paymentForm = document.getElementById('paymentForm');
+        
+        if (!paymentModal || !paymentForm) {
+            console.error('Payment modal or form not found');
+            showAlert('Payment form error. Please refresh the page.', 'error');
+            return;
+        }
+        
+        const provider = paymentForm.dataset.provider;
+        const type = paymentForm.dataset.type;
+        
+        if (!provider || !type) {
+            console.error('Provider or type not set', { provider, type });
+            showAlert('Please select a payment method first.', 'error');
+            return;
+        }
+        
+        const bookId = paymentModal.dataset.bookId;
+        const bookPrice = paymentModal.dataset.bookPrice;
+        const bookTitle = paymentModal.dataset.bookTitle;
 
-    let paymentData = {
-        bookId: bookId,
-        bookTitle: bookTitle,
-        amount: bookPrice,
-        provider: provider,
-        type: type,
-        timestamp: new Date().toISOString()
-    };
+        console.log('Payment data:', { bookId, bookPrice, bookTitle, provider, type });
+
+        let paymentData = {
+            bookId: bookId,
+            bookTitle: bookTitle,
+            amount: bookPrice,
+            provider: provider,
+            type: type,
+            timestamp: new Date().toISOString()
+        };
 
     // Collect data based on payment type
     if (type === 'mobile') {
@@ -413,7 +434,7 @@ function processPayment() {
     // In a real implementation, this would call your backend payment API
     const processingTime = type === 'bank' ? 3000 : (type === 'card' ? 2500 : 3500);
     
-    setTimeout(() => {
+    setTimeout(async () => {
         // Simulate payment success (95% success rate simulation)
         const paymentSuccess = Math.random() > 0.05; // 95% success rate
         
@@ -421,25 +442,30 @@ function processPayment() {
         submitBtn.innerHTML = originalBtnText;
 
         if (paymentSuccess) {
-            // Store purchase in localStorage and Firebase
-            storePurchase(paymentData);
-            
-            // Close payment modal
-            paymentModal.style.display = 'none';
-            
-            // Show success message with library link
-            showSuccessWithLibraryLink(bookTitle, provider, type);
-            
-            // Reset form
-            paymentForm.reset();
-            paymentForm.style.display = 'none';
-            document.querySelector('.payment-methods-select').style.display = 'block';
-            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
-            
-            // Reset form sections
-            document.getElementById('mobileMoneyForm').style.display = 'none';
-            document.getElementById('cardPaymentForm').style.display = 'none';
-            document.getElementById('bankTransferForm').style.display = 'none';
+            try {
+                // Store purchase in localStorage and Firebase
+                await storePurchase(paymentData);
+                
+                // Close payment modal
+                paymentModal.style.display = 'none';
+                
+                // Show success message with library link
+                showSuccessWithLibraryLink(bookTitle, provider, type);
+                
+                // Reset form
+                paymentForm.reset();
+                paymentForm.style.display = 'none';
+                document.querySelector('.payment-methods-select').style.display = 'block';
+                document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+                
+                // Reset form sections
+                document.getElementById('mobileMoneyForm').style.display = 'none';
+                document.getElementById('cardPaymentForm').style.display = 'none';
+                document.getElementById('bankTransferForm').style.display = 'none';
+            } catch (error) {
+                console.error('Error storing purchase:', error);
+                showAlert('Payment successful but there was an error saving your purchase. Please contact support.', 'error');
+            }
         } else {
             // Show appropriate error message
             let errorMsg = 'Payment failed. Please try again.';
@@ -453,6 +479,11 @@ function processPayment() {
             showAlert(errorMsg, 'error');
         }
     }, processingTime);
+    
+    } catch (error) {
+        console.error('Error in processPayment:', error);
+        showAlert('An error occurred processing your payment. Please try again.', 'error');
+    }
 }
 
 // Validate Ugandan phone number
