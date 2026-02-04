@@ -39,18 +39,22 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Load all published content from Firebase
 async function syncWithFirebaseInBackground() {
+    const featuredBooksContainer = document.getElementById('featuredBooks');
+    
     try {
         const result = await firebaseService.getAllContent();
         
         if (result.success) {
-            // Only show published content
-            const publishedContent = result.content.filter(c => c.published === true);
+            // Only show published content (published === true or published is not explicitly false)
+            const publishedContent = result.content.filter(c => c.published !== false);
+            
+            console.log('Total content from Firebase:', result.content.length);
+            console.log('Published content:', publishedContent.length);
             
             booksData.length = 0;
             booksData.push(...publishedContent);
             
             // Display all published content
-            const featuredBooksContainer = document.getElementById('featuredBooks');
             if (featuredBooksContainer) {
                 featuredBooksContainer.innerHTML = '';
                 if (publishedContent.length > 0) {
@@ -59,10 +63,11 @@ async function syncWithFirebaseInBackground() {
                     featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px;">No content available yet. Check back soon!</p>';
                 }
             }
+        } else {
+            throw new Error(result.error || 'Failed to load content');
         }
     } catch (error) {
         console.error('Error loading from Firebase:', error);
-        const featuredBooksContainer = document.getElementById('featuredBooks');
         if (featuredBooksContainer) {
             featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #e74c3c;">Error loading content. Please refresh the page.</p>';
         }

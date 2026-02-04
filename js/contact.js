@@ -1,103 +1,10 @@
 // Import Firebase service
 import firebaseService from './firebase-service.js';
 
-// Contact form handling
+// Contact page - no form handling needed, just animations
 document.addEventListener('DOMContentLoaded', function() {
-    setupContactForm();
+    console.log('Contact page loaded with animations');
 });
-
-function setupContactForm() {
-    const contactForm = document.getElementById('contactForm');
-    if (!contactForm) return;
-
-    contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        handleContactSubmission();
-    });
-}
-
-async function handleContactSubmission() {
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const phone = document.getElementById('phone').value;
-    const subject = document.getElementById('subject').value;
-    const message = document.getElementById('message').value;
-    const formMessage = document.getElementById('formMessage');
-    const contactForm = document.getElementById('contactForm');
-
-    // Get submit button
-    const submitBtn = contactForm.querySelector('button[type="submit"]');
-    const originalBtnText = submitBtn.innerHTML;
-
-    // Show loading state
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
-
-    // Validate email
-    if (!validateEmail(email)) {
-        showFormMessage('Please enter a valid email address', 'error');
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-        return;
-    }
-
-    // Create contact data object
-    const contactData = {
-        name: name,
-        email: email,
-        phone: phone,
-        subject: subject,
-        message: message
-    };
-
-    // Save to Firebase
-    const result = await firebaseService.saveContactMessage(contactData);
-    
-    if (result.success) {
-        // Show success message
-        showFormMessage('Thank you for your message! We will get back to you soon.', 'success');
-
-        // Reset form
-        contactForm.reset();
-
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-        
-        // Also store in localStorage as backup
-        storeContactMessage(contactData);
-    } else {
-        // Show error message
-        showFormMessage('Failed to send message. Please try again.', 'error');
-        
-        // Reset button
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalBtnText;
-    }
-}
-
-function validateEmail(email) {
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailPattern.test(email);
-}
-
-function storeContactMessage(contactData) {
-    let messages = JSON.parse(localStorage.getItem('lydistoriesMessages') || '[]');
-    messages.push({
-        ...contactData,
-        timestamp: new Date().toISOString()
-    });
-    localStorage.setItem('lydistoriesMessages', JSON.stringify(messages));
-}
-
-function showFormMessage(message, type) {
-    const formMessage = document.getElementById('formMessage');
-    if (!formMessage) return;
-
-    formMessage.textContent = message;
-    formMessage.className = `form-message ${type}`;
-    formMessage.style.display = 'block';
-
     // Hide message after 5 seconds
     setTimeout(() => {
         formMessage.style.display = 'none';

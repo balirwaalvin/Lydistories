@@ -59,8 +59,12 @@ async function syncWithFirebaseInBackground() {
         const result = await firebaseService.getAllContent();
         
         if (result.success) {
-            // Only show published content
-            const publishedContent = result.content.filter(c => c.published === true);
+            // Only show published content (published !== false)
+            const publishedContent = result.content.filter(c => c.published !== false);
+            
+            console.log('Order page - Total content:', result.content.length);
+            console.log('Order page - Published content:', publishedContent.length);
+            
             window.booksData = publishedContent;
             
             if (booksGrid) {
