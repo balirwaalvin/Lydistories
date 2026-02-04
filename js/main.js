@@ -49,28 +49,31 @@ async function syncWithFirebaseInBackground() {
             booksData.length = 0;
             booksData.push(...publishedContent);
             
-            // Refresh featured books display
+            // Display all published content
             const featuredBooksContainer = document.getElementById('featuredBooks');
             if (featuredBooksContainer) {
                 featuredBooksContainer.innerHTML = '';
                 if (publishedContent.length > 0) {
-                    loadFeaturedBooks();
+                    loadAllContent();
                 } else {
-                    featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px;">No featured content yet.</p>';
+                    featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px;">No content available yet. Check back soon!</p>';
                 }
             }
         }
     } catch (error) {
         console.error('Error loading from Firebase:', error);
+        const featuredBooksContainer = document.getElementById('featuredBooks');
+        if (featuredBooksContainer) {
+            featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #e74c3c;">Error loading content. Please refresh the page.</p>';
+        }
     }
 }
 
-// Load featured books (first 6)
-function loadFeaturedBooks() {
+// Load all content (not just first 6)
+function loadAllContent() {
     const featuredBooksContainer = document.getElementById('featuredBooks');
-    const featuredBooks = booksData.slice(0, 6);
-
-    featuredBooks.forEach(book => {
+    
+    booksData.forEach(book => {
         const bookCard = createBookCard(book);
         featuredBooksContainer.appendChild(bookCard);
     });

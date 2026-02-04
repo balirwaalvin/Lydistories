@@ -1054,3 +1054,184 @@
     background: #27ae60;
     color: white;
 }
+
+/* New Simplified Admin Dashboard Styles */
+.badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.badge-book {
+    background: #3498db;
+    color: white;
+}
+
+.badge-article {
+    background: #9b59b6;
+    color: white;
+}
+
+.badge-guide {
+    background: #1abc9c;
+    color: white;
+}
+
+.badge-success {
+    background: #10b981;
+    color: white;
+}
+
+.badge-warning {
+    background: #f59e0b;
+    color: white;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    transition: all 0.3s;
+    border-radius: 5px;
+}
+
+.btn-icon:hover {
+    background: var(--light-bg);
+    transform: scale(1.1);
+}
+
+.btn-icon.btn-danger {
+    color: #e74c3c;
+}
+
+.btn-icon.btn-danger:hover {
+    background: #fee;
+}
+
+.file-upload-area {
+    border: 2px dashed #ddd;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-upload-area:hover {
+    border-color: var(--primary-color);
+    background: var(--light-bg);
+}
+
+.file-upload-area input[type="file"] {
+    display: none;
+}
+
+.upload-placeholder {
+    color: #666;
+}
+
+.upload-placeholder i {
+    color: #e74c3c;
+    margin-bottom: 15px;
+}
+
+.upload-placeholder p {
+    margin: 10px 0;
+}
+
+.upload-info {
+    font-size: 0.85rem;
+    color: #999;
+}
+
+.upload-progress,
+.upload-success {
+    padding: 20px;
+}
+
+.upload-progress i {
+    font-size: 2rem;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+}
+
+.upload-success i {
+    font-size: 2rem;
+    color: #10b981;
+    margin-bottom: 10px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.filter-btn {
+    padding: 10px 20px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.filter-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.filter-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
