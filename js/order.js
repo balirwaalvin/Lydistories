@@ -542,6 +542,9 @@ async function storePurchase(paymentData) {
         localStorage.setItem('lydistoriesUserId', userId);
     }
     
+    console.log('Storing purchase for user:', userId);
+    console.log('Purchase data:', paymentData);
+    
     // Add userId to payment data
     paymentData.userId = userId;
     
@@ -555,9 +558,9 @@ async function storePurchase(paymentData) {
     );
     
     if (result.success) {
-        console.log('Purchase recorded in Firebase');
+        console.log('Purchase recorded successfully in Firebase with ID:', result.id);
     } else {
-        console.error('Failed to record purchase in Firebase');
+        console.error('Failed to record purchase in Firebase:', result.error);
         throw new Error('Failed to save purchase');
     }
 }

@@ -43,8 +43,13 @@ async function loadLibrary() {
         localStorage.setItem('lydistoriesUserId', userId);
     }
     
+    console.log('Loading library for user:', userId);
+    
     // Use purchases from Firebase (already loaded in syncPurchasesFromFirebase)
     const purchases = window.userPurchases || [];
+    
+    console.log('Total purchases found:', purchases.length);
+    console.log('Purchases:', purchases);
 
     if (purchases.length === 0) {
         libraryContent.innerHTML = `
@@ -52,7 +57,7 @@ async function loadLibrary() {
                 <i class="fas fa-book"></i>
                 <h2>Your Library is Empty</h2>
                 <p>You haven't purchased any books yet. Browse our collection to get started!</p>
-                <a href="books.html" class="btn btn-primary">Browse Books</a>
+                <a href="order.html" class="btn btn-primary">Browse Content</a>
             </div>
         `;
         return;
@@ -61,6 +66,9 @@ async function loadLibrary() {
     // Load all content from Firebase
     const contentResult = await firebaseService.getAllContent();
     const booksData = contentResult.success ? contentResult.content : [];
+    
+    console.log('Total content in Firebase:', booksData.length);
+    console.log('Content items:', booksData);
 
     // Get unique books (in case of duplicate purchases)
     const uniqueBooks = [];
@@ -97,10 +105,12 @@ async function loadLibrary() {
     uniqueBooks.forEach(purchase => {
         const book = booksData.find(b => b.id == purchase.bookId || b.id === purchase.bookId);
         if (book) {
+            console.log('Found book for purchase:', book.title);
             const bookCard = createLibraryBookCard(book, purchase);
             libraryBooks.appendChild(bookCard);
         } else {
-            console.warn('Book not found for purchase:', purchase.bookId);
+            console.warn('Book not found for purchase. BookId:', purchase.bookId);
+            console.warn('Available book IDs:', booksData.map(b => b.id));
         }
     });
 }

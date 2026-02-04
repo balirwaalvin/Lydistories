@@ -172,13 +172,18 @@ class FirebaseService {
         try {
             const q = query(
                 collection(db, 'purchases'),
-                where('userId', '==', userId || 'guest'),
-                orderBy('purchasedAt', 'desc')
+                where('userId', '==', userId || 'guest')
             );
             const querySnapshot = await getDocs(q);
             const purchases = [];
             querySnapshot.forEach((doc) => {
                 purchases.push({ id: doc.id, ...doc.data() });
+            });
+            // Sort in JavaScript instead of Firestore to avoid index requirement
+            purchases.sort((a, b) => {
+                const dateA = a.purchasedAt?.toMillis?.() || 0;
+                const dateB = b.purchasedAt?.toMillis?.() || 0;
+                return dateB - dateA;
             });
             return { success: true, purchases };
         } catch (error) {
