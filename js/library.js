@@ -59,17 +59,8 @@ async function loadLibrary() {
     }
 
     // Load all content from Firebase
-    let booksData = [];
-    
-    // Try to load from content collection first
     const contentResult = await firebaseService.getAllContent();
-    if (contentResult.success && contentResult.content.length > 0) {
-        booksData = contentResult.content;
-    } else {
-        // Fallback to old books collection
-        const booksResult = await firebaseService.getAllBooks();
-        booksData = booksResult.success ? booksResult.books : [];
-    }
+    const booksData = contentResult.success ? contentResult.content : [];
 
     // Get unique books (in case of duplicate purchases)
     const uniqueBooks = [];

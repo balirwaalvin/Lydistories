@@ -182,14 +182,17 @@ export async function editContent(contentId) {
 
 // Delete content
 export async function deleteContent(contentId) {
-    if (!confirm('Are you sure you want to delete this content?')) return;
+    if (!confirm('Are you sure you want to delete this content? This action cannot be undone.')) return;
     
     try {
+        // Delete from Firebase
         const result = await firebaseService.deleteContent(contentId);
         
         if (result.success) {
-            alert('Content deleted successfully!');
+            alert('Content deleted successfully from Firebase!');
+            // Reload all content views to reflect deletion
             loadAllContent(currentContentFilter);
+            // Also reload individual type views
             loadContentByType('book');
             loadContentByType('article');
             loadContentByType('guide');
@@ -198,7 +201,7 @@ export async function deleteContent(contentId) {
         }
     } catch (error) {
         console.error('Error deleting content:', error);
-        alert('Error deleting content');
+        alert('Error deleting content. Please try again.');
     }
 }
 

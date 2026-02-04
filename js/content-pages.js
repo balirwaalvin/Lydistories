@@ -48,7 +48,7 @@ function setupMobileNav() {
     });
 }
 
-// Show loading state
+// Show loading state immediately
 function loadContentInstantly(contentType) {
     const booksGrid = document.getElementById('booksGrid');
     if (!booksGrid) return;
@@ -56,22 +56,22 @@ function loadContentInstantly(contentType) {
     // Show loading message
     booksGrid.innerHTML = '<p style="text-align: center; padding: 40px; grid-column: 1/-1;"><i class="fas fa-spinner fa-spin"></i> Loading content...</p>';
     
-    // Initialize with default content as fallback
-    window.contentData = getDefaultContent(contentType);
+    // Initialize empty array
+    window.contentData = [];
 }
 
-// Load from Firebase (primary data source)
+// Load all published content from Firebase
 async function syncWithFirebaseInBackground(contentType) {
     try {
         const result = await firebaseService.getAllContent(contentType);
         
-        if (result.success && result.content.length > 0) {
-            const publishedContent = result.content.filter(c => c.published !== false);
+        if (result.success) {
+            // Only show published content
+            const publishedContent = result.content.filter(c => c.published === true);
             window.contentData = publishedContent;
             displayContent(window.contentData);
         } else {
-            // No content found, show empty state
-            displayContent([]);
+            throw new Error(result.error || 'Failed to load content');
         }
     } catch (error) {
         console.error('Error loading from Firebase:', error);
@@ -201,32 +201,4 @@ function setupCategoryFilter(contentType) {
         
         displayContent(filteredContent);
     });
-}
-
-// Get default content for each type
-function getDefaultContent(contentType) {
-    const defaultBooks = [
-        {
-            id: 1,
-            type: 'book',
-            title: "The Journey Home",
-            author: "Sarah Mitchell",
-            category: "fiction",
-            price: 15000,
-            cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
-            description: "A captivating story about finding one's place in the world."
-        },
-        {
-            id: 2,
-            type: 'book',
-            title: "Success Mindset",
-            author: "David Okello",
-            category: "self-help",
-            price: 20000,
-            cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=600&fit=crop",
-            description: "Transform your life with proven strategies for growth."
-        }
-    ];
-
-    return defaultBooks.filter(item => item.type === contentType);
 }

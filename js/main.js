@@ -1,91 +1,18 @@
 // Import Firebase service
 import firebaseService from './firebase-service.js';
 
-// Sample books data
-let booksData = [
-    {
-        id: 1,
-        title: "The Journey Home",
-        author: "Sarah Mitchell",
-        category: "fiction",
-        price: 15000,
-        cover: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=600&fit=crop",
-        description: "A captivating story about finding one's place in the world. Follow Emma as she embarks on a journey of self-discovery across the beautiful landscapes of Uganda."
-    },
-    {
-        id: 2,
-        title: "Success Mindset",
-        author: "David Okello",
-        category: "self-help",
-        price: 20000,
-        cover: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=400&h=600&fit=crop",
-        description: "Transform your life with proven strategies for personal and professional growth. Learn from Uganda's top entrepreneurs and thought leaders."
-    },
-    {
-        id: 3,
-        title: "Love in Kampala",
-        author: "Grace Namukasa",
-        category: "romance",
-        price: 18000,
-        cover: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400&h=600&fit=crop",
-        description: "A heartwarming romance set in the bustling streets of Kampala. Experience the magic of love in modern Uganda."
-    },
-    {
-        id: 4,
-        title: "Mystery of the Pearl",
-        author: "James Mugisha",
-        category: "mystery",
-        price: 17000,
-        cover: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?w=400&h=600&fit=crop",
-        description: "An intriguing mystery that unfolds along the shores of Lake Victoria. Detective Kato must solve the case before time runs out."
-    },
-    {
-        id: 5,
-        title: "African Tales",
-        author: "Mary Nansubuga",
-        category: "fiction",
-        price: 16000,
-        cover: "https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&h=600&fit=crop",
-        description: "A collection of inspiring stories from across Africa, celebrating our rich heritage and diverse cultures."
-    },
-    {
-        id: 6,
-        title: "Business Excellence",
-        author: "Peter Ssemakula",
-        category: "non-fiction",
-        price: 25000,
-        cover: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=400&h=600&fit=crop",
-        description: "A comprehensive guide to building and scaling your business in East Africa. Practical insights from successful entrepreneurs."
-    },
-    {
-        id: 7,
-        title: "The Hidden Truth",
-        author: "Rebecca Nakato",
-        category: "mystery",
-        price: 19000,
-        cover: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=600&fit=crop",
-        description: "Secrets buried deep in the past come to light in this gripping mystery thriller. Nothing is as it seems."
-    },
-    {
-        id: 8,
-        title: "Finding Purpose",
-        author: "Moses Kisakye",
-        category: "self-help",
-        price: 22000,
-        cover: "https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400&h=600&fit=crop",
-        description: "Discover your true calling and live a life of meaning. Practical exercises and inspirational stories to guide your journey."
-    }
-];
+// Books data - loaded from Firebase
+let booksData = [];
 
 // Navigation toggle for mobile
 document.addEventListener('DOMContentLoaded', async function() {
-    // Load featured books with default data first
+    // Show loading state
     const featuredBooksContainer = document.getElementById('featuredBooks');
     if (featuredBooksContainer) {
-        loadFeaturedBooks();
+        featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin"></i> Loading featured content...</p>';
     }
     
-    // Load from Firebase and refresh display
+    // Load from Firebase
     await syncWithFirebaseInBackground();
     
     const hamburger = document.querySelector('.hamburger');
@@ -110,23 +37,27 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 });
 
-// Load from Firebase (primary data source)
+// Load all published content from Firebase
 async function syncWithFirebaseInBackground() {
     try {
         const result = await firebaseService.getAllContent();
         
-        if (result.success && result.content.length > 0) {
-            const publishedContent = result.content.filter(c => c.published !== false);
+        if (result.success) {
+            // Only show published content
+            const publishedContent = result.content.filter(c => c.published === true);
             
-            // Update booksData with Firebase content
             booksData.length = 0;
             booksData.push(...publishedContent);
             
             // Refresh featured books display
             const featuredBooksContainer = document.getElementById('featuredBooks');
-            if (featuredBooksContainer && publishedContent.length > 0) {
+            if (featuredBooksContainer) {
                 featuredBooksContainer.innerHTML = '';
-                loadFeaturedBooks();
+                if (publishedContent.length > 0) {
+                    loadFeaturedBooks();
+                } else {
+                    featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px;">No featured content yet.</p>';
+                }
             }
         }
     } catch (error) {

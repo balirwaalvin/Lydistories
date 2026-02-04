@@ -275,18 +275,13 @@ function showAccessDenied() {
 }
 
 async function loadBook(bookId, previewMode = false) {
-    // Load all books/content from Firebase
+    // Load all content from Firebase
     let allBooks = [];
     
     try {
-        const contentResult = await firebaseService.getAllContent();
-        if (contentResult.success) {
-            allBooks = contentResult.content;
-        } else {
-            const booksResult = await firebaseService.getAllBooks();
-            if (booksResult.success) {
-                allBooks = booksResult.books;
-            }
+        const result = await firebaseService.getAllContent();
+        if (result.success) {
+            allBooks = result.content;
         }
     } catch (error) {
         console.error('Error loading from Firebase:', error);
