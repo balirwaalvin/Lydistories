@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     await loadLibrary();
 });
 
-// Sync purchases from Firebase to localStorage
+// Load purchases from Firebase (primary source)
 async function syncPurchasesFromFirebase() {
     try {
         // Get user identifier
@@ -17,36 +17,18 @@ async function syncPurchasesFromFirebase() {
             localStorage.setItem('lydistoriesUserId', userId);
         }
         
-        // Get purchases from Firebase
+        // Get purchases from Firebase (primary source)
         const result = await firebaseService.getUserPurchases(userId);
         
-        if (result.success && result.purchases.length > 0) {
-            // Merge with local purchases
-            const localPurchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
-            const allPurchases = [...localPurchases];
-            
-            // Add Firebase purchases that aren't already local
-            result.purchases.forEach(fbPurchase => {
-                const exists = allPurchases.some(p => 
-                    p.bookId == fbPurchase.bookId && p.userId === userId
-                );
-                if (!exists) {
-                    allPurchases.push({
-                        bookId: fbPurchase.bookId,
-                        bookTitle: fbPurchase.bookTitle,
-                        amount: fbPurchase.amount,
-                        provider: fbPurchase.paymentMethod,
-                        userId: userId,
-                        timestamp: fbPurchase.purchasedAt?.toDate?.()?.toISOString() || new Date().toISOString()
-                    });
-                }
-            });
-            
-            // Save merged purchases
-            localStorage.setItem('lydistoriesPurchases', JSON.stringify(allPurchases));
+        if (result.success) {
+            // Use Firebase as the source of truth
+            window.userPurchases = result.purchases;
+        } else {
+            window.userPurchases = [];
         }
     } catch (error) {
-        console.log('Firebase sync not available:', error);
+        console.error('Error loading purchases from Firebase:', error);
+        window.userPurchases = [];
     }
 }
 
@@ -61,8 +43,8 @@ async function loadLibrary() {
         localStorage.setItem('lydistoriesUserId', userId);
     }
     
-    // Load purchases from localStorage (already synced)
-    const purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
+    // Use purchases from Firebase (already loaded in syncPurchasesFromFirebase)
+    const purchases = window.userPurchases || [];
 
     if (purchases.length === 0) {
         libraryContent.innerHTML = `
@@ -76,10 +58,10 @@ async function loadLibrary() {
         return;
     }
 
-    // Load all content from Firebase (books, articles, guides)
+    // Load all content from Firebase
     let booksData = [];
     
-    // Try to load from content collection first (new system)
+    // Try to load from content collection first
     const contentResult = await firebaseService.getAllContent();
     if (contentResult.success && contentResult.content.length > 0) {
         booksData = contentResult.content;
@@ -87,18 +69,6 @@ async function loadLibrary() {
         // Fallback to old books collection
         const booksResult = await firebaseService.getAllBooks();
         booksData = booksResult.success ? booksResult.books : [];
-    }
-    
-    // Also load from localStorage as fallback
-    if (booksData.length === 0) {
-        const storedBooks = localStorage.getItem('lydistoriesBooks');
-        if (storedBooks) {
-            try {
-                booksData = JSON.parse(storedBooks);
-            } catch (e) {
-                console.error('Error parsing stored books:', e);
-            }
-        }
     }
 
     // Get unique books (in case of duplicate purchases)

@@ -79,26 +79,14 @@ let booksData = [
 
 // Navigation toggle for mobile
 document.addEventListener('DOMContentLoaded', async function() {
-    // Load books from localStorage if available
-    const storedBooks = localStorage.getItem('lydistoriesBooks');
-    if (storedBooks) {
-        booksData.length = 0;
-        // Only load published books for public view
-        const allBooks = JSON.parse(storedBooks);
-        booksData.push(...allBooks.filter(b => b.published !== false));
-    } else {
-        // Save default books to localStorage
-        localStorage.setItem('lydistoriesBooks', JSON.stringify(booksData));
-    }
-    
-    // Load featured books immediately
+    // Load featured books with default data first
     const featuredBooksContainer = document.getElementById('featuredBooks');
     if (featuredBooksContainer) {
         loadFeaturedBooks();
     }
     
-    // Sync with Firebase in background
-    syncWithFirebaseInBackground();
+    // Load from Firebase and refresh display
+    await syncWithFirebaseInBackground();
     
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
@@ -122,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 });
 
-// Sync with Firebase in background
+// Load from Firebase (primary data source)
 async function syncWithFirebaseInBackground() {
     try {
         const result = await firebaseService.getAllContent();
@@ -130,14 +118,11 @@ async function syncWithFirebaseInBackground() {
         if (result.success && result.content.length > 0) {
             const publishedContent = result.content.filter(c => c.published !== false);
             
-            // Update localStorage
-            localStorage.setItem('lydistoriesBooks', JSON.stringify(publishedContent));
-            
-            // Update booksData
+            // Update booksData with Firebase content
             booksData.length = 0;
             booksData.push(...publishedContent);
             
-            // Refresh featured books if on home page
+            // Refresh featured books display
             const featuredBooksContainer = document.getElementById('featuredBooks');
             if (featuredBooksContainer && publishedContent.length > 0) {
                 featuredBooksContainer.innerHTML = '';
@@ -145,7 +130,7 @@ async function syncWithFirebaseInBackground() {
             }
         }
     } catch (error) {
-        console.error('Error syncing with Firebase:', error);
+        console.error('Error loading from Firebase:', error);
     }
 }
 

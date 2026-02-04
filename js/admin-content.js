@@ -272,10 +272,7 @@ export async function handleContentFormSubmit(e) {
         }
         
         if (result.success) {
-            // Sync to localStorage for immediate availability on frontend
-            await syncContentToLocalStorage();
-            
-            alert(`Content ${currentContentId ? 'updated' : 'added'} successfully!`);
+            alert(`Content ${currentContentId ? 'updated' : 'added'} successfully! Changes will be visible on the site immediately.`);
             closeContentModal();
             loadAllContent(currentContentFilter);
             loadContentByType(contentData.type);
@@ -288,19 +285,7 @@ export async function handleContentFormSubmit(e) {
     }
 }
 
-// Sync all content to localStorage
-async function syncContentToLocalStorage() {
-    try {
-        const result = await firebaseService.getAllContent();
-        if (result.success) {
-            const publishedContent = result.content.filter(c => c.published !== false);
-            localStorage.setItem('lydistoriesBooks', JSON.stringify(publishedContent));
-            console.log('Synced', publishedContent.length, 'items to localStorage');
-        }
-    } catch (error) {
-        console.error('Error syncing to localStorage:', error);
-    }
-}
+
 
 // ============ File Upload Handlers ============
 

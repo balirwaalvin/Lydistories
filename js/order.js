@@ -39,99 +39,74 @@ function checkForBookIdInURL() {
     }
 }
 
-// Load books instantly from localStorage or default data
+// Load books instantly - show loading state
 function loadAllBooksInstantly() {
     const booksGrid = document.getElementById('booksGrid');
     if (!booksGrid) return;
 
-    // Load from localStorage first (faster than Firebase)
-    const storedBooks = localStorage.getItem('lydistoriesBooks');
-    if (storedBooks) {
-        try {
-            const allBooks = JSON.parse(storedBooks);
-            window.booksData = allBooks.filter(b => b.published !== false);
-        } catch (e) {
-            console.error('Error parsing stored books:', e);
-            window.booksData = getDefaultBooks();
-        }
-    } else {
-        // Use default books if nothing in localStorage
-        window.booksData = getDefaultBooks();
-        // Save to localStorage for future use
-        localStorage.setItem('lydistoriesBooks', JSON.stringify(window.booksData));
-    }
-
-    // Display books immediately
-    if (window.booksData && window.booksData.length > 0) {
-        booksGrid.innerHTML = '';
-        window.booksData.forEach(book => {
-            const bookCard = createBookCard(book);
-            booksGrid.appendChild(bookCard);
-        });
-    } else {
-        booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">No books available</p>';
-    }
+    // Show loading state
+    booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;"><i class="fas fa-spinner fa-spin"></i> Loading books...</p>';
+    
+    // Initialize with default books as fallback only
+    window.booksData = getDefaultBooks();
 }
 
-// Sync with Firebase in background (non-blocking)
+// Load books from Firebase (primary data source)
 async function syncWithFirebaseInBackground() {
+    const booksGrid = document.getElementById('booksGrid');
+    
     try {
         // Try to load from new content collection first
         const contentResult = await firebaseService.getAllContent();
         
         if (contentResult.success && contentResult.content.length > 0) {
-            // Update localStorage with Firebase content data
             const publishedContent = contentResult.content.filter(c => c.published !== false);
-            localStorage.setItem('lydistoriesBooks', JSON.stringify(publishedContent));
+            window.booksData = publishedContent;
             
-            // Check if there are new items not currently displayed
-            const currentIds = window.booksData.map(b => b.id);
-            const newContent = publishedContent.filter(c => !currentIds.includes(c.id));
-            
-            if (newContent.length > 0) {
-                // Add new content to display
-                window.booksData = publishedContent;
-                const booksGrid = document.getElementById('booksGrid');
-                if (booksGrid && booksGrid.children.length > 0) {
-                    // Refresh display to show new content
-                    booksGrid.innerHTML = '';
-                    window.booksData.forEach(item => {
+            // Display content
+            if (booksGrid) {
+                booksGrid.innerHTML = '';
+                if (publishedContent.length === 0) {
+                    booksGrid.innerHTML = '<p style="text-align: center; padding: 40px;">No content available</p>';
+                } else {
+                    publishedContent.forEach(item => {
                         const bookCard = createBookCard(item);
                         booksGrid.appendChild(bookCard);
                     });
                 }
             }
-            return; // Exit if content collection has data
+            return;
         }
         
-        // Fallback to old books collection for backward compatibility
+        // Fallback to old books collection
         const result = await firebaseService.getAllBooks();
         
         if (result.success && result.books.length > 0) {
-            // Update localStorage with Firebase data
-            localStorage.setItem('lydistoriesBooks', JSON.stringify(result.books));
+            const publishedBooks = result.books.filter(b => b.published !== false);
+            window.booksData = publishedBooks;
             
-            // Check if there are new books not currently displayed
-            const currentIds = window.booksData.map(b => b.id);
-            const newBooks = result.books.filter(b => !currentIds.includes(b.id) && b.published !== false);
-            
-            if (newBooks.length > 0) {
-                // Add new books to display
-                window.booksData = result.books.filter(b => b.published !== false);
-                const booksGrid = document.getElementById('booksGrid');
-                if (booksGrid && booksGrid.children.length > 0) {
-                    // Refresh display to show new books
-                    booksGrid.innerHTML = '';
-                    window.booksData.forEach(book => {
-                        const bookCard = createBookCard(book);
-                        booksGrid.appendChild(bookCard);
-                    });
-                }
+            if (booksGrid) {
+                booksGrid.innerHTML = '';
+                publishedBooks.forEach(book => {
+                    const bookCard = createBookCard(book);
+                    booksGrid.appendChild(bookCard);
+                });
+            }
+        } else {
+            // No Firebase data, show default books
+            if (booksGrid && window.booksData.length > 0) {
+                booksGrid.innerHTML = '';
+                window.booksData.forEach(book => {
+                    const bookCard = createBookCard(book);
+                    booksGrid.appendChild(bookCard);
+                });
             }
         }
     } catch (error) {
-        console.log('Firebase sync running in background:', error);
-        // Don't show errors to user since books are already loaded
+        console.error('Error loading from Firebase:', error);
+        if (booksGrid) {
+            booksGrid.innerHTML = '<p style="text-align: center; padding: 40px; color: #e74c3c;">Error loading content. Please refresh the page.</p>';
+        }
     }
 }
 
@@ -677,9 +652,9 @@ function maskCardNumber(cardNumber) {
     return '**** **** **** ' + cardNumber.slice(-4);
 }
 
-// Store purchase in Firebase and localStorage
+// Store purchase in Firebase (primary storage)
 async function storePurchase(paymentData) {
-    // Get or create user identifier
+    // Get or create user identifier  
     let userId = localStorage.getItem('lydistoriesUserId');
     if (!userId) {
         userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -689,7 +664,7 @@ async function storePurchase(paymentData) {
     // Add userId to payment data
     paymentData.userId = userId;
     
-    // Store in Firebase
+    // Store in Firebase only
     const result = await firebaseService.recordPurchase(
         userId,
         paymentData.bookId,
@@ -700,12 +675,10 @@ async function storePurchase(paymentData) {
     
     if (result.success) {
         console.log('Purchase recorded in Firebase');
+    } else {
+        console.error('Failed to record purchase in Firebase');
+        throw new Error('Failed to save purchase');
     }
-    
-    // Also store in localStorage for offline access
-    let purchases = JSON.parse(localStorage.getItem('lydistoriesPurchases') || '[]');
-    purchases.push(paymentData);
-    localStorage.setItem('lydistoriesPurchases', JSON.stringify(purchases));
 }
 
 // Show alert message

@@ -275,15 +275,21 @@ function showAccessDenied() {
 }
 
 async function loadBook(bookId, previewMode = false) {
-    // Load all books/content
-    const storedBooks = localStorage.getItem('lydistoriesBooks');
+    // Load all books/content from Firebase
     let allBooks = [];
-    if (storedBooks) {
-        try {
-            allBooks = JSON.parse(storedBooks);
-        } catch (e) {
-            console.error('Error parsing books:', e);
+    
+    try {
+        const contentResult = await firebaseService.getAllContent();
+        if (contentResult.success) {
+            allBooks = contentResult.content;
+        } else {
+            const booksResult = await firebaseService.getAllBooks();
+            if (booksResult.success) {
+                allBooks = booksResult.books;
+            }
         }
+    } catch (error) {
+        console.error('Error loading from Firebase:', error);
     }
     
     // Find the book
