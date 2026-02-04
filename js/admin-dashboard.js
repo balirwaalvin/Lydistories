@@ -32,8 +32,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         await loadOrdersTable();
         console.log('Loading messages...');
         await loadMessages();
-        console.log('Loading writers room...');
-        await loadWritersRoomBooks();
         console.log('Setting up navigation...');
         setupNavigation();
         console.log('Setting up form listeners...');

@@ -51,11 +51,6 @@ function displayContentTable(content) {
                 <button onclick="window.deleteContent('${item.id}')" class="btn btn-sm btn-danger" title="Delete">
                     <i class="fas fa-trash"></i>
                 </button>
-                ${item.format === 'chapters' ? `
-                <button onclick="window.openWritersRoom('${item.id}')" class="btn btn-sm btn-primary" title="Edit Chapters">
-                    <i class="fas fa-pen"></i>
-                </button>
-                ` : ''}
             </td>
         </tr>
     `).join('');
@@ -248,6 +243,7 @@ export async function handleContentFormSubmit(e) {
         price: parseInt(document.getElementById('contentPrice').value),
         format: document.getElementById('contentFormat').value,
         cover: uploadedCoverUrl || document.getElementById('contentCover').value,
+        coverImage: uploadedCoverUrl || document.getElementById('contentCover').value,
         description: document.getElementById('contentDescription').value,
         published: document.getElementById('contentPublished').checked
     };
@@ -267,11 +263,18 @@ export async function handleContentFormSubmit(e) {
         let result;
         if (currentContentId) {
             result = await firebaseService.updateContent(currentContentId, contentData);
+            contentData.id = currentContentId;
         } else {
             result = await firebaseService.addContent(contentData);
+            if (result.success && result.id) {
+                contentData.id = result.id;
+            }
         }
         
         if (result.success) {
+            // Sync to localStorage for immediate availability on frontend
+            await syncContentToLocalStorage();
+            
             alert(`Content ${currentContentId ? 'updated' : 'added'} successfully!`);
             closeContentModal();
             loadAllContent(currentContentFilter);
@@ -282,6 +285,20 @@ export async function handleContentFormSubmit(e) {
     } catch (error) {
         console.error('Error saving content:', error);
         alert('Error saving content');
+    }
+}
+
+// Sync all content to localStorage
+async function syncContentToLocalStorage() {
+    try {
+        const result = await firebaseService.getAllContent();
+        if (result.success) {
+            const publishedContent = result.content.filter(c => c.published !== false);
+            localStorage.setItem('lydistoriesBooks', JSON.stringify(publishedContent));
+            console.log('Synced', publishedContent.length, 'items to localStorage');
+        }
+    } catch (error) {
+        console.error('Error syncing to localStorage:', error);
     }
 }
 

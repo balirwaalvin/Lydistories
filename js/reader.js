@@ -264,8 +264,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Check if user has access or is in preview mode
     const previewMode = isPreviewMode(bookId);
     
-    // Load book (preview or full)
-    loadBook(bookId, previewMode);
+    // Load book (preview or full) - includes PDF support
+    await loadBook(bookId, previewMode);
     setupReaderControls();
     loadReadingPreferences();
 });
@@ -274,23 +274,57 @@ function showAccessDenied() {
     document.getElementById('accessDeniedModal').style.display = 'block';
 }
 
-function loadBook(bookId, previewMode = false) {
-    const book = booksData.find(b => b.id == bookId);
-    if (!book) {
-        window.location.href = 'library.html';
-        return;
+async function loadBook(bookId, previewMode = false) {
+    // Load all books/content
+    const storedBooks = localStorage.getItem('lydistoriesBooks');
+    let allBooks = [];
+    if (storedBooks) {
+        try {
+            allBooks = JSON.parse(storedBooks);
+        } catch (e) {
+            console.error('Error parsing books:', e);
+        }
     }
-
-    const content = getBookContent(bookId);
-    if (!content) {
+    
+    // Find the book
+    const book = allBooks.find(b => b.id == bookId || b.id === bookId);
+    if (!book) {
+        console.error('Book not found:', bookId);
         window.location.href = 'library.html';
         return;
     }
 
     // Set book info
-    document.getElementById('readerBookCover').src = book.cover;
+    const bookCover = book.cover || book.coverImage || 'https://via.placeholder.com/400x600?text=No+Cover';
+    document.getElementById('readerBookCover').src = bookCover;
     document.getElementById('readerBookTitle').textContent = book.title;
     document.getElementById('readerBookAuthor').textContent = `by ${book.author}`;
+
+    // Check if book has PDF/document format
+    if (book.format === 'pdf' || book.format === 'document') {
+        if (book.documentUrl) {
+            loadPDFDocument(book.documentUrl, book.title, previewMode);
+            return;
+        } else {
+            console.error('PDF format specified but no documentUrl found');
+        }
+    }
+
+    // Original chapter-based content loading
+    const content = getBookContent(bookId);
+    if (!content) {
+        // If no hardcoded content, show message
+        const readerContent = document.getElementById('readerContent');
+        readerContent.innerHTML = `
+            <div style="text-align: center; padding: 40px;">
+                <i class="fas fa-book" style="font-size: 3rem; color: #999; margin-bottom: 20px;"></i>
+                <h2>Content Not Available</h2>
+                <p>This book's content is being prepared. Please check back soon.</p>
+                <a href="library.html" class="btn btn-primary" style="margin-top: 20px;">Back to Library</a>
+            </div>
+        `;
+        return;
+    }
 
     // Add preview mode indicator if needed
     if (previewMode) {
@@ -342,6 +376,41 @@ function loadBook(bookId, previewMode = false) {
 
     // Store current book for navigation
     window.currentBook = { bookId, content, previewMode, book };
+}
+
+// Load PDF document in iframe
+function loadPDFDocument(documentUrl, title, previewMode = false) {
+    const readerContent = document.getElementById('readerContent');
+    const chapterList = document.getElementById('chapterList');
+    
+    // Hide chapter navigation for PDFs
+    chapterList.innerHTML = '<li><i class="fas fa-file-pdf"></i> Full Document</li>';
+    
+    // Hide chapter navigation buttons
+    document.getElementById('prevChapter').style.display = 'none';
+    document.getElementById('nextChapter').style.display = 'none';
+    
+    // Hide reading settings (not applicable for PDFs)
+    const readerSettings = document.querySelector('.reader-settings');
+    if (readerSettings) {
+        readerSettings.style.display = 'none';
+    }
+    
+    // Load PDF in iframe
+    readerContent.innerHTML = `
+        <div style="width: 100%; height: 100%; display: flex; flex-direction: column;">
+            ${previewMode ? `
+            <div style="background: #f39c12; color: white; padding: 15px; text-align: center; font-weight: bold;">
+                <i class="fas fa-eye"></i> PREVIEW MODE - Purchase to access full document
+            </div>
+            ` : ''}
+            <iframe 
+                src="${documentUrl}" 
+                style="width: 100%; height: 100%; border: none; flex: 1;"
+                title="${title}"
+            ></iframe>
+        </div>
+    `;
 }
 
 function loadChapter(bookContent, chapterId, previewMode = false, bookId = null, book = null) {
