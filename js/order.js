@@ -7,7 +7,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadAllBooksInstantly();
     
     // Then sync with Firebase in background (optional)
-    syncWithFirebaseInBackground();
+    await syncWithFirebaseInBackground();
+    
+    // Check if a specific book ID is in the URL
+    checkForBookIdInURL();
     
     setupSearch();
     setupCategoryFilter();
@@ -15,6 +18,26 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupPaymentForm();
     setupCardInputFormatting();
 });
+
+// Check if URL contains a book ID and show that book's details
+function checkForBookIdInURL() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookId = urlParams.get('id');
+    
+    if (bookId && window.booksData) {
+        // Find the book in our data
+        const book = window.booksData.find(b => b.id == bookId || b.id === bookId);
+        
+        if (book) {
+            // Show the book modal automatically
+            setTimeout(() => {
+                showBookDetails(book);
+            }, 100);
+        } else {
+            console.warn('Book not found with ID:', bookId);
+        }
+    }
+}
 
 // Load books instantly from localStorage or default data
 function loadAllBooksInstantly() {
@@ -208,6 +231,83 @@ function loadAllBooks() {
         const bookCard = createBookCard(book);
         booksGrid.appendChild(bookCard);
     });
+}
+
+// Create book card element
+function createBookCard(book) {
+    const card = document.createElement('div');
+    card.className = 'book-card';
+    
+    // Determine content type badge
+    const contentType = book.type || 'book';
+    const typeIcons = {
+        'book': 'fa-book',
+        'article': 'fa-newspaper',
+        'guide': 'fa-graduation-cap'
+    };
+    const typeLabels = {
+        'book': 'Book',
+        'article': 'Article',
+        'guide': 'Study Guide'
+    };
+    const typeIcon = typeIcons[contentType] || 'fa-book';
+    const typeLabel = typeLabels[contentType] || 'Book';
+    
+    card.innerHTML = `
+        <div class="book-image">
+            <img src="${book.cover || book.coverImage || 'https://via.placeholder.com/400x600?text=No+Cover'}" alt="${book.title}">
+            <div class="content-type-badge-overlay ${contentType}">
+                <i class="fas ${typeIcon}"></i> ${typeLabel}
+            </div>
+        </div>
+        <div class="book-info">
+            <h3 class="book-title">${book.title}</h3>
+            <p class="book-author"><i class="fas fa-user"></i> ${book.author}</p>
+            <p class="book-description">${(book.description || '').substring(0, 100)}${book.description && book.description.length > 100 ? '...' : ''}</p>
+            <div class="book-footer">
+                <span class="book-price">UGX ${(book.price || 0).toLocaleString()}</span>
+                <span class="book-category">${book.category || book.subject || 'General'}</span>
+            </div>
+        </div>
+    `;
+
+    card.addEventListener('click', () => {
+        showBookDetails(book);
+    });
+
+    return card;
+}
+
+// Show book details (open modal or direct to payment)
+function showBookDetails(book) {
+    const paymentModal = document.getElementById('paymentModal');
+    if (!paymentModal) {
+        console.error('Payment modal not found');
+        return;
+    }
+
+    // Update payment modal with book details
+    const bookTitleElement = document.getElementById('paymentBookTitle');
+    const paymentAmountElement = document.getElementById('paymentAmount');
+    
+    if (bookTitleElement) {
+        bookTitleElement.textContent = book.title;
+    }
+    
+    if (paymentAmountElement) {
+        paymentAmountElement.textContent = (book.price || 0).toLocaleString();
+    }
+
+    // Store book data for payment processing
+    paymentModal.dataset.bookId = book.id;
+    paymentModal.dataset.bookPrice = book.price || 0;
+    paymentModal.dataset.bookTitle = book.title;
+
+    // Show payment modal
+    paymentModal.style.display = 'block';
+    
+    // Scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // Search functionality
