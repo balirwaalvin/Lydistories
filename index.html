@@ -18,7 +18,6 @@
             </div>
             <ul class="nav-links">
                 <li><a href="index.html" class="active">Home</a></li>
-                <li><a href="order.html">Browse Content</a></li>
                 <li><a href="library.html">My Library</a></li>
                 <li><a href="contact.html">Contact</a></li>
                 <li><a href="account.html"><i class="fas fa-user"></i></a></li>
@@ -76,15 +75,42 @@
             <div class="hero-content">
                 <h1>Welcome to Lydistories</h1>
                 <p>Discover amazing stories and immerse yourself in the world of books</p>
-                <a href="order.html" class="btn btn-primary">Browse Books</a>
+                <a href="#featuredBooks" class="btn btn-primary">Browse Books</a>
             </div>
         </div>
     </section>
 
     <!-- Featured Books Section -->
-    <section class="featured-books">
+    <section class="featured-books" id="featuredBooks">
         <div class="container">
             <h2 class="section-title">All Content</h2>
+            
+            <!-- Search and Filter Section -->
+            <div class="filter-section">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search books, articles, guides...">
+                </div>
+                <div class="filter-options">
+                    <select id="categoryFilter">
+                        <option value="all">All Categories</option>
+                        <option value="fiction">Fiction</option>
+                        <option value="non-fiction">Non-Fiction</option>
+                        <option value="romance">Romance</option>
+                        <option value="mystery">Mystery</option>
+                        <option value="self-help">Self-Help</option>
+                        <option value="business">Business</option>
+                        <option value="education">Education</option>
+                    </select>
+                    <select id="typeFilter">
+                        <option value="all">All Types</option>
+                        <option value="book">Books</option>
+                        <option value="article">Articles</option>
+                        <option value="guide">Study Guides</option>
+                    </select>
+                </div>
+            </div>
+            
             <div class="books-grid" id="featuredBooks">
                 <!-- All published content will be dynamically loaded here -->
             </div>
@@ -138,6 +164,163 @@
         </div>
     </section>
 
+    <!-- Book Details Modal -->
+    <div id="bookModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modalBookCover" src="" alt="Book Cover">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modalBookTitle"></h2>
+                    <p class="modal-author"><i class="fas fa-user"></i> <span id="modalBookAuthor"></span></p>
+                    <p class="modal-category"><i class="fas fa-tag"></i> <span id="modalBookCategory"></span></p>
+                    <p class="modal-price"><i class="fas fa-tag"></i> <span id="modalBookPrice"></span> UGX</p>
+                    <p class="modal-description" id="modalBookDescription"></p>
+                    <div class="modal-actions">
+                        <button id="previewBtn" class="btn btn-secondary">
+                            <i class="fas fa-eye"></i> Preview
+                        </button>
+                        <button id="purchaseBtn" class="btn btn-primary">
+                            <i class="fas fa-shopping-cart"></i> Purchase Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content payment-modal-content">
+            <span class="payment-close close">&times;</span>
+            <h2><i class="fas fa-credit-card"></i> Complete Your Purchase</h2>
+            <div class="payment-book-info">
+                <h3 id="paymentBookTitle"></h3>
+                <p class="payment-amount">Amount: <strong id="paymentAmount"></strong> UGX</p>
+            </div>
+
+            <div class="payment-methods-select">
+                <h3>Select Payment Method</h3>
+                <div class="payment-options">
+                    <button class="payment-option" data-provider="mtn" data-type="mobile">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>MTN Mobile Money</span>
+                    </button>
+                    <button class="payment-option" data-provider="airtel" data-type="mobile">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Airtel Money</span>
+                    </button>
+                    <button class="payment-option" data-provider="visa" data-type="card">
+                        <i class="fab fa-cc-visa"></i>
+                        <span>VISA Card</span>
+                    </button>
+                    <button class="payment-option" data-provider="mastercard" data-type="card">
+                        <i class="fab fa-cc-mastercard"></i>
+                        <span>MasterCard</span>
+                    </button>
+                    <button class="payment-option" data-provider="bank" data-type="bank">
+                        <i class="fas fa-university"></i>
+                        <span>Bank Transfer</span>
+                    </button>
+                </div>
+            </div>
+
+            <form id="paymentForm" style="display: none;">
+                <!-- Mobile Money Form -->
+                <div id="mobileMoneyForm" class="payment-form-section" style="display: none;">
+                    <div class="payment-provider-header">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h3>Mobile Money</h3>
+                    </div>
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number</label>
+                        <input type="tel" id="phoneNumber" placeholder="0772123456" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerName">Full Name</label>
+                        <input type="text" id="customerName" placeholder="Your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customerEmail">Email Address (Optional)</label>
+                        <input type="email" id="customerEmail" placeholder="your@email.com">
+                    </div>
+                    <div class="payment-instructions">
+                        <p><i class="fas fa-info-circle"></i> You will receive a prompt on your phone to authorize the payment.</p>
+                        <p><i class="fas fa-lock"></i> Your payment is secure and encrypted</p>
+                    </div>
+                </div>
+
+                <!-- Card Payment Form -->
+                <div id="cardPaymentForm" class="payment-form-section" style="display: none;">
+                    <div class="payment-provider-header">
+                        <i class="fas fa-credit-card"></i>
+                        <h3>Card Payment</h3>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardNumber">Card Number</label>
+                        <input type="text" id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="cardExpiry">Expiry Date</label>
+                            <input type="text" id="cardExpiry" placeholder="MM/YY" maxlength="5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="cardCVV">CVV</label>
+                            <input type="text" id="cardCVV" placeholder="123" maxlength="3" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardHolderName">Cardholder Name</label>
+                        <input type="text" id="cardHolderName" placeholder="Name on card" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardEmail">Email Address (Optional)</label>
+                        <input type="email" id="cardEmail" placeholder="your@email.com">
+                    </div>
+                    <div class="payment-instructions">
+                        <p><i class="fas fa-lock"></i> Your payment is secure and encrypted</p>
+                    </div>
+                </div>
+
+                <!-- Bank Transfer Form -->
+                <div id="bankTransferForm" class="payment-form-section" style="display: none;">
+                    <div class="bank-details">
+                        <h4><i class="fas fa-info-circle"></i> Bank Transfer Details</h4>
+                        <div class="bank-info-box">
+                            <p><strong>Bank Name:</strong> Stanbic Bank Uganda</p>
+                            <p><strong>Account Name:</strong> Lydistories Ltd</p>
+                            <p><strong>Account Number:</strong> 9030006789123</p>
+                            <p><strong>Branch:</strong> Kampala Main Branch</p>
+                            <p><strong>Swift Code:</strong> SBICUGKX</p>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="bankTransferName">Your Full Name</label>
+                        <input type="text" id="bankTransferName" placeholder="Name on bank account" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bankTransferEmail">Email Address</label>
+                        <input type="email" id="bankTransferEmail" placeholder="your@email.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bankTransferReference">Transfer Reference Number</label>
+                        <input type="text" id="bankTransferReference" placeholder="Enter reference number from bank" required>
+                    </div>
+                    <div class="payment-instructions">
+                        <p><i class="fas fa-info-circle"></i> After completing the bank transfer, enter the reference number above. Your purchase will be verified within 24 hours.</p>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-lock"></i> Proceed to Pay
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -173,5 +356,6 @@
     <script type="module" src="js/theme-switcher.js"></script>
     <script type="module" src="js/hero-carousel.js"></script>
     <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/order.js"></script>
 </body>
 </html>

@@ -122,8 +122,8 @@ function createBookCard(book) {
     `;
 
     card.addEventListener('click', () => {
-        // Open preview mode directly - users can see partial content before paying
-        window.location.href = `reader.html?bookId=${book.id}&preview=true`;
+        // Show modal with book details and options to preview or purchase
+        showBookModal(book);
     });
 
     return card;
@@ -156,7 +156,8 @@ function showBookModal(book) {
     const previewBtn = document.getElementById('previewBtn');
     if (previewBtn) {
         previewBtn.onclick = () => {
-            window.location.href = `reader.html?bookId=${book.id}`;
+            modal.style.display = 'none';
+            window.location.href = `reader.html?bookId=${book.id}&preview=true`;
         };
     }
 }
@@ -329,7 +330,70 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 500);
         }
     });
+    
+    // Setup search and filter functionality
+    setupSearchAndFilters();
 });
+
+// Search and Filter Functionality
+function setupSearchAndFilters() {
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const typeFilter = document.getElementById('typeFilter');
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', filterBooks);
+    }
+    
+    if (categoryFilter) {
+        categoryFilter.addEventListener('change', filterBooks);
+    }
+    
+    if (typeFilter) {
+        typeFilter.addEventListener('change', filterBooks);
+    }
+}
+
+function filterBooks() {
+    const searchTerm = document.getElementById('searchInput')?.value.toLowerCase() || '';
+    const categoryFilter = document.getElementById('categoryFilter')?.value || 'all';
+    const typeFilter = document.getElementById('typeFilter')?.value || 'all';
+    
+    const filteredBooks = booksData.filter(book => {
+        const matchesSearch = 
+            book.title.toLowerCase().includes(searchTerm) ||
+            book.author.toLowerCase().includes(searchTerm) ||
+            (book.description && book.description.toLowerCase().includes(searchTerm));
+        
+        const matchesCategory = categoryFilter === 'all' || 
+            (book.category && book.category.toLowerCase() === categoryFilter.toLowerCase()) ||
+            (book.subject && book.subject.toLowerCase() === categoryFilter.toLowerCase());
+        
+        const matchesType = typeFilter === 'all' || 
+            (book.type && book.type.toLowerCase() === typeFilter.toLowerCase());
+        
+        return matchesSearch && matchesCategory && matchesType;
+    });
+    
+    displayFilteredBooks(filteredBooks);
+}
+
+function displayFilteredBooks(books) {
+    const featuredBooksContainer = document.getElementById('featuredBooks');
+    if (!featuredBooksContainer) return;
+    
+    featuredBooksContainer.innerHTML = '';
+    
+    if (books.length === 0) {
+        featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px; grid-column: 1/-1;">No content found matching your search.</p>';
+        return;
+    }
+    
+    books.forEach(book => {
+        const bookCard = createBookCard(book);
+        featuredBooksContainer.appendChild(bookCard);
+    });
+}
 
 // Export books data for use in other files
 if (typeof module !== 'undefined' && module.exports) {
