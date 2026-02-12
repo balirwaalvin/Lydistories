@@ -22,7 +22,29 @@ document.addEventListener('DOMContentLoaded', async function() {
 // Check if URL contains a book ID and show that book's details
 function checkForBookIdInURL() {
     const urlParams = new URLSearchParams(window.location.search);
-    const bookId = urlParams.get('id');
+    const bookId = urlParams.get('bookId') || urlParams.get('id'); // Check both parameters
+    
+    // Also check sessionStorage for book data from preview mode
+    const selectedBookData = sessionStorage.getItem('selectedBook');
+    
+    if (selectedBookData) {
+        try {
+            const book = JSON.parse(selectedBookData);
+            // Show the book modal and payment modal automatically
+            setTimeout(() => {
+                showBookDetails(book);
+                // Also show payment modal directly after a short delay
+                setTimeout(() => {
+                    showPaymentModal(book);
+                }, 500);
+            }, 100);
+            // Clear the sessionStorage after use
+            sessionStorage.removeItem('selectedBook');
+            return;
+        } catch (e) {
+            console.error('Error parsing selected book data:', e);
+        }
+    }
     
     if (bookId && window.booksData) {
         // Find the book in our data

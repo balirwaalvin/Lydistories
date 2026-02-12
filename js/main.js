@@ -108,6 +108,9 @@ function createBookCard(book) {
         <div class="content-type-badge-overlay ${contentType}">
             <i class="fas ${typeIcon}"></i> ${typeLabel}
         </div>
+        <div class="preview-badge-corner">
+            <i class="fas fa-eye"></i> Preview
+        </div>
         <img src="${book.cover}" alt="${book.title}" class="book-cover">
         <div class="book-info">
             <h3>${book.title}</h3>
@@ -119,7 +122,8 @@ function createBookCard(book) {
     `;
 
     card.addEventListener('click', () => {
-        showBookModal(book);
+        // Open preview mode directly - users can see partial content before paying
+        window.location.href = `reader.html?bookId=${book.id}&preview=true`;
     });
 
     return card;

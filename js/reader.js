@@ -252,6 +252,7 @@ function getBookContent(bookId) {
 document.addEventListener('DOMContentLoaded', async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const bookId = urlParams.get('bookId');
+    const forcePreview = urlParams.get('preview') === 'true'; // Check if preview mode is requested
 
     if (!bookId) {
         window.location.href = 'library.html';
@@ -262,7 +263,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     await syncPurchasesFromFirebase();
 
     // Check if user has access or is in preview mode
-    const previewMode = isPreviewMode(bookId);
+    // Force preview if 'preview=true' in URL, even if user has purchased
+    const previewMode = forcePreview || isPreviewMode(bookId);
     
     // Load book (preview or full) - includes PDF support
     await loadBook(bookId, previewMode);
@@ -452,7 +454,7 @@ function loadChapter(bookContent, chapterId, previewMode = false, bookId = null,
                         <span class="price-label">Only</span>
                         <span class="price-amount">${book?.price || '0'} UGX</span>
                     </div>
-                    <button onclick="window.location.href='order.html'" class="btn btn-primary btn-large">
+                    <button onclick="purchaseBook('${bookId}')" class="btn btn-primary btn-large">
                         <i class="fas fa-shopping-cart"></i> Purchase This Book
                     </button>
                     <p class="paywall-footer">
@@ -468,7 +470,7 @@ function loadChapter(bookContent, chapterId, previewMode = false, bookId = null,
                 <i class="fas fa-lock" style="font-size: 4rem; color: #e74c3c; margin-bottom: 20px;"></i>
                 <h2>This Chapter is Locked</h2>
                 <p>Purchase the full book to access all chapters</p>
-                <button onclick="window.location.href='order.html'" class="btn btn-primary">
+                <button onclick="purchaseBook('${bookId}')" class="btn btn-primary">
                     <i class="fas fa-shopping-cart"></i> Purchase Now
                 </button>
             </div>
@@ -657,4 +659,34 @@ function saveReadingProgress(bookId, chapterId) {
     const progress = JSON.parse(localStorage.getItem('readingProgress') || '{}');
     progress[bookId] = chapterId;
     localStorage.setItem('readingProgress', JSON.stringify(progress));
+}
+
+// Global function to handle purchase from preview mode
+window.purchaseBook = async function(bookId) {
+    // Load book details from Firebase
+    try {
+        const result = await firebaseService.getAllContent();
+        if (result.success) {
+            const book = result.content.find(b => b.id == bookId || b.id === bookId);
+            if (book) {
+                // Store book details in sessionStorage for order page
+                sessionStorage.setItem('selectedBook', JSON.stringify({
+                    id: book.id,
+                    title: book.title,
+                    author: book.author,
+                    price: book.price,
+                    cover: book.cover || book.coverImage,
+                    description: book.description
+                }));
+                // Redirect to order page which will show payment modal
+                window.location.href = 'order.html?bookId=' + bookId;
+            } else {
+                console.error('Book not found');
+                window.location.href = 'order.html';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading book details:', error);
+        window.location.href = 'order.html';
+    }
 }
