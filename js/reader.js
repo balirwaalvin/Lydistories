@@ -255,7 +255,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const forcePreview = urlParams.get('preview') === 'true'; // Check if preview mode is requested
 
     if (!bookId) {
-        window.location.href = 'library.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -293,7 +293,7 @@ async function loadBook(bookId, previewMode = false) {
     const book = allBooks.find(b => b.id == bookId || b.id === bookId);
     if (!book) {
         console.error('Book not found:', bookId);
-        window.location.href = 'library.html';
+        window.location.href = 'index.html';
         return;
     }
 
@@ -323,7 +323,7 @@ async function loadBook(bookId, previewMode = false) {
                 <i class="fas fa-book" style="font-size: 3rem; color: #999; margin-bottom: 20px;"></i>
                 <h2>Content Not Available</h2>
                 <p>This book's content is being prepared. Please check back soon.</p>
-                <a href="library.html" class="btn btn-primary" style="margin-top: 20px;">Back to Library</a>
+                <a href="index.html" class="btn btn-primary" style="margin-top: 20px;">Back to Home</a>
             </div>
         `;
         return;
@@ -458,7 +458,7 @@ function loadChapter(bookContent, chapterId, previewMode = false, bookId = null,
                         <i class="fas fa-shopping-cart"></i> Purchase This Book
                     </button>
                     <p class="paywall-footer">
-                        <a href="library.html" style="color: #7f8c8d;">← Back to Library</a>
+                        <a href="index.html" style="color: #7f8c8d;">← Back to Home</a>
                     </p>
                 </div>
             </div>
@@ -579,11 +579,11 @@ function setupReaderControls() {
         });
     }
 
-    // Back to library
+    // Back to home
     const backBtn = document.getElementById('backToLibrary');
     if (backBtn) {
         backBtn.addEventListener('click', () => {
-            window.location.href = 'library.html';
+            window.location.href = 'index.html';
         });
     }
 }
