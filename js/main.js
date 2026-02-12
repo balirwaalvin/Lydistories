@@ -15,6 +15,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load from Firebase
     await syncWithFirebaseInBackground();
     
+    // Check if there's a bookId in URL or sessionStorage (from preview redirect)
+    checkForBookSelection();
+    
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
     
@@ -70,6 +73,46 @@ async function syncWithFirebaseInBackground() {
         console.error('Error loading from Firebase:', error);
         if (featuredBooksContainer) {
             featuredBooksContainer.innerHTML = '<p style="text-align: center; padding: 40px; color: #e74c3c;">Error loading content. Please refresh the page.</p>';
+        }
+    }
+}
+
+// Check for book selection from URL or sessionStorage
+function checkForBookSelection() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const bookId = urlParams.get('bookId');
+    
+    // Check sessionStorage for book data from preview mode
+    const selectedBookData = sessionStorage.getItem('selectedBook');
+    
+    if (selectedBookData) {
+        try {
+            const book = JSON.parse(selectedBookData);
+            // Show the book modal and payment modal automatically
+            setTimeout(() => {
+                showBookModal(book);
+                // Also show payment modal directly after a short delay
+                setTimeout(() => {
+                    showPaymentModal(book);
+                }, 500);
+            }, 100);
+            // Clear the sessionStorage after use
+            sessionStorage.removeItem('selectedBook');
+            return;
+        } catch (e) {
+            console.error('Error parsing selected book data:', e);
+        }
+    }
+    
+    if (bookId && booksData.length > 0) {
+        // Find the book in our data
+        const book = booksData.find(b => b.id == bookId || b.id === bookId);
+        
+        if (book) {
+            // Show the book modal automatically
+            setTimeout(() => {
+                showBookModal(book);
+            }, 100);
         }
     }
 }

@@ -57,7 +57,7 @@ async function loadLibrary() {
                 <i class="fas fa-book"></i>
                 <h2>Your Library is Empty</h2>
                 <p>You haven't purchased any books yet. Browse our collection to get started!</p>
-                <a href="order.html" class="btn btn-primary">Browse Content</a>
+                <a href="index.html" class="btn btn-primary">Browse Content</a>
             </div>
         `;
         return;

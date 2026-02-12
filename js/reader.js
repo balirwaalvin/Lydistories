@@ -669,7 +669,7 @@ window.purchaseBook = async function(bookId) {
         if (result.success) {
             const book = result.content.find(b => b.id == bookId || b.id === bookId);
             if (book) {
-                // Store book details in sessionStorage for order page
+                // Store book details in sessionStorage for home page
                 sessionStorage.setItem('selectedBook', JSON.stringify({
                     id: book.id,
                     title: book.title,
@@ -678,15 +678,15 @@ window.purchaseBook = async function(bookId) {
                     cover: book.cover || book.coverImage,
                     description: book.description
                 }));
-                // Redirect to order page which will show payment modal
-                window.location.href = 'order.html?bookId=' + bookId;
+                // Redirect to home page which will show payment modal
+                window.location.href = 'index.html?bookId=' + bookId;
             } else {
                 console.error('Book not found');
-                window.location.href = 'order.html';
+                window.location.href = 'index.html';
             }
         }
     } catch (error) {
         console.error('Error loading book details:', error);
-        window.location.href = 'order.html';
+        window.location.href = 'index.html';
     }
 }
